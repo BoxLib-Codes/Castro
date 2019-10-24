@@ -1,0 +1,34 @@
+&fortin
+
+  ye_err = 1d14
+  ye_grad = 0.01d0
+  ye_grad_rel = 1.d20
+  max_ye_err_lev = -1000
+  max_ye_grad_lev = 1000
+  max_ye_grad_rel_lev = -1
+
+/
+
+&tagging
+
+  denerr = 1d14
+  dengrad = 0.01d0
+  max_denerr_lev = 3
+  max_dengrad_lev = -1
+
+  presserr = 3d0
+  pressgrad = 0.01d0
+  max_presserr_lev = 3
+  max_pressgrad_lev = 3
+
+/
+
+&extern
+
+  eos_input_is_constant = .true.
+  weaklib_eos_table_name = "EquationOfStateTable.h5"
+  small_x = 1.d-30
+  use_tables = .false.
+  use_c12ag_deboer17 = .false.
+
+/

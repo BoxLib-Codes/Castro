@@ -490,44 +490,6 @@ contains
 #endif
     allocate(xl_ext, yl_ext, zl_ext, xr_ext, yr_ext, zr_ext)
 
-#ifdef ROTATION
-    allocate(rot_period)
-    rot_period = -1.e200_rt;
-    allocate(rot_period_dot)
-    rot_period_dot = 0.0_rt;
-    allocate(rotation_include_centrifugal)
-    rotation_include_centrifugal = 1;
-    allocate(rotation_include_coriolis)
-    rotation_include_coriolis = 1;
-    allocate(rotation_include_domegadt)
-    rotation_include_domegadt = 1;
-    allocate(state_in_rotating_frame)
-    state_in_rotating_frame = 1;
-    allocate(rot_source_type)
-    rot_source_type = 4;
-    allocate(implicit_rotation_update)
-    implicit_rotation_update = 1;
-    allocate(rot_axis)
-    rot_axis = 3;
-#endif
-#ifdef GRAVITY
-    allocate(use_point_mass)
-    use_point_mass = 0;
-    allocate(point_mass)
-    point_mass = 0.0_rt;
-    allocate(point_mass_fix_solution)
-    point_mass_fix_solution = 0;
-#endif
-#ifdef DIFFUSION
-    allocate(diffuse_temp)
-    diffuse_temp = 0;
-    allocate(diffuse_cutoff_density)
-    diffuse_cutoff_density = -1.e200_rt;
-    allocate(diffuse_cutoff_density_hi)
-    diffuse_cutoff_density_hi = -1.e200_rt;
-    allocate(diffuse_cond_scale_fac)
-    diffuse_cond_scale_fac = 1.0_rt;
-#endif
     allocate(difmag)
     difmag = 0.1_rt;
     allocate(small_dens)
@@ -676,30 +638,46 @@ contains
     grown_factor = 1;
     allocate(track_grid_losses)
     track_grid_losses = 0;
-
-    call amrex_parmparse_build(pp, "castro")
-#ifdef ROTATION
-    call pp%query("rotational_period", rot_period)
-    call pp%query("rotational_dPdt", rot_period_dot)
-    call pp%query("rotation_include_centrifugal", rotation_include_centrifugal)
-    call pp%query("rotation_include_coriolis", rotation_include_coriolis)
-    call pp%query("rotation_include_domegadt", rotation_include_domegadt)
-    call pp%query("state_in_rotating_frame", state_in_rotating_frame)
-    call pp%query("rot_source_type", rot_source_type)
-    call pp%query("implicit_rotation_update", implicit_rotation_update)
-    call pp%query("rot_axis", rot_axis)
-#endif
 #ifdef GRAVITY
-    call pp%query("use_point_mass", use_point_mass)
-    call pp%query("point_mass", point_mass)
-    call pp%query("point_mass_fix_solution", point_mass_fix_solution)
+    allocate(use_point_mass)
+    use_point_mass = 0;
+    allocate(point_mass)
+    point_mass = 0.0_rt;
+    allocate(point_mass_fix_solution)
+    point_mass_fix_solution = 0;
+#endif
+#ifdef ROTATION
+    allocate(rot_period)
+    rot_period = -1.e200_rt;
+    allocate(rot_period_dot)
+    rot_period_dot = 0.0_rt;
+    allocate(rotation_include_centrifugal)
+    rotation_include_centrifugal = 1;
+    allocate(rotation_include_coriolis)
+    rotation_include_coriolis = 1;
+    allocate(rotation_include_domegadt)
+    rotation_include_domegadt = 1;
+    allocate(state_in_rotating_frame)
+    state_in_rotating_frame = 1;
+    allocate(rot_source_type)
+    rot_source_type = 4;
+    allocate(implicit_rotation_update)
+    implicit_rotation_update = 1;
+    allocate(rot_axis)
+    rot_axis = 3;
 #endif
 #ifdef DIFFUSION
-    call pp%query("diffuse_temp", diffuse_temp)
-    call pp%query("diffuse_cutoff_density", diffuse_cutoff_density)
-    call pp%query("diffuse_cutoff_density_hi", diffuse_cutoff_density_hi)
-    call pp%query("diffuse_cond_scale_fac", diffuse_cond_scale_fac)
+    allocate(diffuse_temp)
+    diffuse_temp = 0;
+    allocate(diffuse_cutoff_density)
+    diffuse_cutoff_density = -1.e200_rt;
+    allocate(diffuse_cutoff_density_hi)
+    diffuse_cutoff_density_hi = -1.e200_rt;
+    allocate(diffuse_cond_scale_fac)
+    diffuse_cond_scale_fac = 1.0_rt;
 #endif
+
+    call amrex_parmparse_build(pp, "castro")
     call pp%query("difmag", difmag)
     call pp%query("small_dens", small_dens)
     call pp%query("small_temp", small_temp)
@@ -774,6 +752,28 @@ contains
     call pp%query("do_acc", do_acc)
     call pp%query("grown_factor", grown_factor)
     call pp%query("track_grid_losses", track_grid_losses)
+#ifdef GRAVITY
+    call pp%query("use_point_mass", use_point_mass)
+    call pp%query("point_mass", point_mass)
+    call pp%query("point_mass_fix_solution", point_mass_fix_solution)
+#endif
+#ifdef ROTATION
+    call pp%query("rotational_period", rot_period)
+    call pp%query("rotational_dPdt", rot_period_dot)
+    call pp%query("rotation_include_centrifugal", rotation_include_centrifugal)
+    call pp%query("rotation_include_coriolis", rotation_include_coriolis)
+    call pp%query("rotation_include_domegadt", rotation_include_domegadt)
+    call pp%query("state_in_rotating_frame", state_in_rotating_frame)
+    call pp%query("rot_source_type", rot_source_type)
+    call pp%query("implicit_rotation_update", implicit_rotation_update)
+    call pp%query("rot_axis", rot_axis)
+#endif
+#ifdef DIFFUSION
+    call pp%query("diffuse_temp", diffuse_temp)
+    call pp%query("diffuse_cutoff_density", diffuse_cutoff_density)
+    call pp%query("diffuse_cutoff_density_hi", diffuse_cutoff_density_hi)
+    call pp%query("diffuse_cond_scale_fac", diffuse_cond_scale_fac)
+#endif
     call amrex_parmparse_destroy(pp)
 
 
@@ -793,35 +793,124 @@ contains
 
 
     !$acc update &
-    !$acc device(difmag, small_dens, small_temp) &
-    !$acc device(small_pres, small_ener, do_hydro) &
-    !$acc device(time_integration_method, limit_fourth_order, use_reconstructed_gamma1) &
-    !$acc device(hybrid_hydro, ppm_type, ppm_temp_fix) &
-    !$acc device(ppm_predict_gammae, ppm_reference_eigenvectors, plm_iorder) &
-    !$acc device(plm_limiter, plm_well_balanced, hybrid_riemann) &
-    !$acc device(riemann_solver, cg_maxiter, cg_tol) &
-    !$acc device(cg_blend, use_eos_in_riemann, riemann_speed_limit) &
-    !$acc device(use_flattening, transverse_use_eos, transverse_reset_density) &
-    !$acc device(transverse_reset_rhoe, dual_energy_eta1, dual_energy_eta2) &
-    !$acc device(use_pslope, limit_fluxes_on_small_dens, density_reset_method) &
-    !$acc device(allow_small_energy, do_sponge, sponge_implicit) &
-    !$acc device(first_order_hydro, hse_zero_vels, hse_interp_temp) &
-    !$acc device(hse_reflect_vels, sdc_order, sdc_quadrature) &
-    !$acc device(sdc_extra, sdc_solver, sdc_solver_tol_dens) &
-    !$acc device(sdc_solver_tol_spec, sdc_solver_tol_ener, sdc_solver_atol) &
-    !$acc device(sdc_solver_relax_factor, sdc_solve_for_rhoe, sdc_use_analytic_jac) &
-    !$acc device(cfl, dtnuc_e, dtnuc_X) &
-    !$acc device(dtnuc_X_threshold, do_react, react_T_min) &
-    !$acc device(react_T_max, react_rho_min, react_rho_max) &
-    !$acc device(disable_shock_burning, T_guess, diffuse_temp) &
-    !$acc device(diffuse_cutoff_density, diffuse_cutoff_density_hi, diffuse_cond_scale_fac) &
-    !$acc device(do_grav, grav_source_type, do_rotation) &
-    !$acc device(rot_period, rot_period_dot, rotation_include_centrifugal) &
-    !$acc device(rotation_include_coriolis, rotation_include_domegadt, state_in_rotating_frame) &
-    !$acc device(rot_source_type, implicit_rotation_update, rot_axis) &
-    !$acc device(use_point_mass, point_mass, point_mass_fix_solution) &
-    !$acc device(do_acc, grown_factor, track_grid_losses) &
-    !$acc device(const_grav, get_g_from_phi)
+    !$acc device(difmag) &
+    !$acc device(small_dens) &
+    !$acc device(small_temp) &
+    !$acc device(small_pres) &
+    !$acc device(small_ener) &
+    !$acc device(do_hydro) &
+    !$acc device(time_integration_method) &
+    !$acc device(limit_fourth_order) &
+    !$acc device(use_reconstructed_gamma1) &
+    !$acc device(hybrid_hydro) &
+    !$acc device(ppm_type) &
+    !$acc device(ppm_temp_fix) &
+    !$acc device(ppm_predict_gammae) &
+    !$acc device(ppm_reference_eigenvectors) &
+    !$acc device(plm_iorder) &
+    !$acc device(plm_limiter) &
+    !$acc device(plm_well_balanced) &
+    !$acc device(hybrid_riemann) &
+    !$acc device(riemann_solver) &
+    !$acc device(cg_maxiter) &
+    !$acc device(cg_tol) &
+    !$acc device(cg_blend) &
+    !$acc device(use_eos_in_riemann) &
+    !$acc device(riemann_speed_limit) &
+    !$acc device(use_flattening) &
+    !$acc device(transverse_use_eos) &
+    !$acc device(transverse_reset_density) &
+    !$acc device(transverse_reset_rhoe) &
+    !$acc device(dual_energy_eta1) &
+    !$acc device(dual_energy_eta2) &
+    !$acc device(use_pslope) &
+    !$acc device(limit_fluxes_on_small_dens) &
+    !$acc device(density_reset_method) &
+    !$acc device(allow_small_energy) &
+    !$acc device(do_sponge) &
+    !$acc device(sponge_implicit) &
+    !$acc device(first_order_hydro) &
+    !$acc device(hse_zero_vels) &
+    !$acc device(hse_interp_temp) &
+    !$acc device(hse_reflect_vels) &
+    !$acc device(sdc_order) &
+    !$acc device(sdc_quadrature) &
+    !$acc device(sdc_extra) &
+    !$acc device(sdc_solver) &
+    !$acc device(sdc_solver_tol_dens) &
+    !$acc device(sdc_solver_tol_spec) &
+    !$acc device(sdc_solver_tol_ener) &
+    !$acc device(sdc_solver_atol) &
+    !$acc device(sdc_solver_relax_factor) &
+    !$acc device(sdc_solve_for_rhoe) &
+    !$acc device(sdc_use_analytic_jac) &
+    !$acc device(cfl) &
+    !$acc device(dtnuc_e) &
+    !$acc device(dtnuc_X) &
+    !$acc device(dtnuc_X_threshold) &
+    !$acc device(do_react) &
+    !$acc device(react_T_min) &
+    !$acc device(react_T_max) &
+    !$acc device(react_rho_min) &
+    !$acc device(react_rho_max) &
+    !$acc device(disable_shock_burning) &
+    !$acc device(T_guess) &
+#ifdef DIFFUSION
+    !$acc device(diffuse_temp) &
+#endif
+#ifdef DIFFUSION
+    !$acc device(diffuse_cutoff_density) &
+#endif
+#ifdef DIFFUSION
+    !$acc device(diffuse_cutoff_density_hi) &
+#endif
+#ifdef DIFFUSION
+    !$acc device(diffuse_cond_scale_fac) &
+#endif
+    !$acc device(do_grav) &
+    !$acc device(grav_source_type) &
+    !$acc device(do_rotation) &
+#ifdef ROTATION
+    !$acc device(rot_period) &
+#endif
+#ifdef ROTATION
+    !$acc device(rot_period_dot) &
+#endif
+#ifdef ROTATION
+    !$acc device(rotation_include_centrifugal) &
+#endif
+#ifdef ROTATION
+    !$acc device(rotation_include_coriolis) &
+#endif
+#ifdef ROTATION
+    !$acc device(rotation_include_domegadt) &
+#endif
+#ifdef ROTATION
+    !$acc device(state_in_rotating_frame) &
+#endif
+#ifdef ROTATION
+    !$acc device(rot_source_type) &
+#endif
+#ifdef ROTATION
+    !$acc device(implicit_rotation_update) &
+#endif
+#ifdef ROTATION
+    !$acc device(rot_axis) &
+#endif
+#ifdef GRAVITY
+    !$acc device(use_point_mass) &
+#endif
+#ifdef GRAVITY
+    !$acc device(point_mass) &
+#endif
+#ifdef GRAVITY
+    !$acc device(point_mass_fix_solution) &
+#endif
+    !$acc device(do_acc) &
+    !$acc device(grown_factor) &
+    !$acc device(track_grid_losses) &
+    !$acc device(const_grav) &
+    !$acc device(get_g_from_phi)
 
 
 #ifdef GRAVITY

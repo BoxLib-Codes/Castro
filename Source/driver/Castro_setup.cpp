@@ -16,6 +16,10 @@
 # include "Radiation.H"
 # include "RAD_F.H"
 #endif
+#ifdef THORNADO
+# include "TwoMoment_F.H"
+# include "DG_Interpolater.H"
+#endif
 
 #include "AMReX_buildInfo.H"
 
@@ -553,6 +557,87 @@ Castro::variableSetUp ()
   set_z_vel_bc(bc,phys_bc);
   desc_lst.setComponent(Rotation_Type,2,"rot_z",bc,BndryFunc(ca_rotzfill));
 #endif
+
+// **********************************************************************
+#ifdef THORNADO
+  // We need to call this here so we know how many components to allocate 
+  int ncomp_thornado = Castro::init_thornado();
+  int ngrow_thornado = ngrow_state;
+
+  char buf[20];
+
+  store_in_checkpoint = false;
+  desc_lst.addDescriptor(Thornado_Rad_Source_Type, IndexType::TheCellType(),
+			 StateDescriptor::Point, ngrow_thornado, ncomp_thornado,
+			 &dg_interp, state_data_extrap, 
+			 store_in_checkpoint);
+
+  for (int i=0; i < ncomp_thornado; ++i)
+  {
+      sprintf(buf, "thor_rad_src_%d", i);
+      set_scalar_bc(bc,phys_bc);
+      desc_lst.setComponent(Thornado_Rad_Source_Type,i,string(buf),bc,
+                            BndryFunc(ca_generic_single_fill));
+  }
+
+  // **********************************************************************
+
+  store_in_checkpoint = true;
+  desc_lst.addDescriptor(Thornado_Type, IndexType::TheCellType(),
+			 StateDescriptor::Point, ngrow_thornado, ncomp_thornado,
+			 &dg_interp, state_data_extrap, 
+			 store_in_checkpoint);
+
+  for (int i=0; i <ncomp_thornado; ++i)
+    {
+      sprintf(buf, "thor_%d", i);
+      set_scalar_bc(bc,phys_bc);
+      desc_lst.setComponent(Thornado_Type,i,string(buf),bc,
+                            BndryFunc(ca_generic_single_fill));
+    }
+
+  // **********************************************************************
+
+  derive_lst.add("Ye",IndexType::TheCellType(),1,ca_derspec,the_same_box);
+  derive_lst.addComponent("Ye",desc_lst,State_Type,Density,1);
+  derive_lst.addComponent("Ye",desc_lst,State_Type,FirstSpec,1);
+
+  derive_lst.add("J_avg",IndexType::TheCellType(),1,ca_der_J,the_same_box);
+  derive_lst.addComponent("J_avg",desc_lst,Thornado_Type,0,ncomp_thornado);
+
+//derive_lst.add("J_avg_per_E",IndexType::TheCellType(),100,ca_der_J_per_E,the_same_box);
+//derive_lst.addComponent("J_avg_per_E",desc_lst,Thornado_Type,0,ncomp_thornado);
+
+  derive_lst.add("Hx_avg",IndexType::TheCellType(),1,ca_der_Hx,the_same_box);
+  derive_lst.addComponent("Hx_avg",desc_lst,Thornado_Type,0,ncomp_thornado);
+
+  derive_lst.add("Hy_avg",IndexType::TheCellType(),1,ca_der_Hy,the_same_box);
+  derive_lst.addComponent("Hy_avg",desc_lst,Thornado_Type,0,ncomp_thornado);
+
+  derive_lst.add("Hz_avg",IndexType::TheCellType(),1,ca_der_Hz,the_same_box);
+  derive_lst.addComponent("Hz_avg",desc_lst,Thornado_Type,0,ncomp_thornado);
+
+  // **********************************************************************
+
+  store_in_checkpoint = false;
+  desc_lst.addDescriptor(Thornado_Fluid_Source_Type, IndexType::TheCellType(),
+			 StateDescriptor::Point, NUM_GROW, NUM_STATE,
+			 &cell_cons_interp, state_data_extrap,
+			 store_in_checkpoint);
+
+  for (int i=0; i < NUM_STATE; ++i)
+  {
+      sprintf(buf, "thor_fluid_src_%d", i);
+      set_scalar_bc(bc,phys_bc);
+      desc_lst.setComponent(Thornado_Fluid_Source_Type,i,string(buf),bc,
+                            BndryFunc(ca_generic_single_fill));
+  }
+
+#endif
+
+// **********************************************************************
+
+
 
   // Source term array will use standard hyperbolic fill.
 

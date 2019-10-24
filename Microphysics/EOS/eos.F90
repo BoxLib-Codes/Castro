@@ -123,7 +123,7 @@ contains
 #ifdef EXTRA_THERMO
     use eos_type_module, only : composition_derivatives
 #endif
-    use actual_eos_module, only: actual_eos
+    use actual_eos_module, only: actual_eos, eos_name
     use eos_override_module, only: eos_override
 #if (!(defined(AMREX_USE_CUDA) || defined(AMREX_USE_ACC)))
     use castro_error_module, only: castro_error
@@ -146,9 +146,11 @@ contains
     if (.not. initialized) call castro_error('EOS: not initialized')
 #endif
 
-    ! Get abar, zbar, etc.
 
+#ifndef NUCLEAR_EOS
+    ! Get abar, zbar, etc.
     call composition(state)
+#endif    
 
     ! Force the inputs to be valid.
 

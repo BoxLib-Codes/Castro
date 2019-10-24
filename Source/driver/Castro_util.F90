@@ -447,6 +447,8 @@ contains
     integer  :: i, j, k
     real(rt) :: spec_sum
 
+#ifndef NUCLEAR_EOS
+
     !$gpu
 
     do k = lo(3), hi(3)
@@ -467,6 +469,8 @@ contains
           enddo
        enddo
     enddo
+
+#endif
 
   end subroutine ca_check_initial_species
 
@@ -492,6 +496,7 @@ contains
 
     !$gpu
 
+#ifndef NUCLEAR_EOS
     do k = lo(3), hi(3)
        do j = lo(2), hi(2)
           do i = lo(1), hi(1)
@@ -507,6 +512,7 @@ contains
           enddo
        enddo
     enddo
+#endif
 
   end subroutine ca_normalize_species
 

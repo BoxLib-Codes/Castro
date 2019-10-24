@@ -3,17 +3,6 @@
 // or add runtime parameters, please edit _cpp_parameters and then run
 // mk_params.sh
 
-#ifdef GRAVITY
-int         Castro::use_point_mass = 0;
-amrex::Real Castro::point_mass = 0.0;
-int         Castro::point_mass_fix_solution = 0;
-#endif
-#ifdef DIFFUSION
-int         Castro::diffuse_temp = 0;
-amrex::Real Castro::diffuse_cutoff_density = -1.e200;
-amrex::Real Castro::diffuse_cutoff_density_hi = -1.e200;
-amrex::Real Castro::diffuse_cond_scale_fac = 1.0;
-#endif
 int         Castro::state_interp_order = 1;
 int         Castro::lin_limit_state_interp = 0;
 int         Castro::state_nghost = 0;
@@ -143,6 +132,14 @@ std::string Castro::job_name = "";
 int         Castro::output_at_completion = 1;
 amrex::Real Castro::reset_checkpoint_time = -1.e200;
 int         Castro::reset_checkpoint_step = -1;
+#ifdef GRAVITY
+int         Castro::use_point_mass = 0;
+amrex::Real Castro::point_mass = 0.0;
+int         Castro::point_mass_fix_solution = 0;
+#endif
+#ifdef AMREX_PARTICLES
+int         Castro::do_tracer_particles = 0;
+#endif
 #ifdef ROTATION
 amrex::Real Castro::rotational_period = -1.e200;
 amrex::Real Castro::rotational_dPdt = 0.0;
@@ -154,6 +151,9 @@ int         Castro::rot_source_type = 4;
 int         Castro::implicit_rotation_update = 1;
 int         Castro::rot_axis = 3;
 #endif
-#ifdef AMREX_PARTICLES
-int         Castro::do_tracer_particles = 0;
+#ifdef DIFFUSION
+int         Castro::diffuse_temp = 0;
+amrex::Real Castro::diffuse_cutoff_density = -1.e200;
+amrex::Real Castro::diffuse_cutoff_density_hi = -1.e200;
+amrex::Real Castro::diffuse_cond_scale_fac = 1.0;
 #endif

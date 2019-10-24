@@ -127,8 +127,24 @@ int          Castro::Shock         = -1;
 int          Castro::NQSRC         = -1;
 int          Castro::NQAUX         = -1;
 int          Castro::NQ            = -1;
-
 int          Castro::NGDNV         = -1;
+
+#ifdef THORNADO
+int          Castro::THORNADO_NMOMENTS   = 4;
+int          Castro::THORNADO_RAD_NDOF   = std::pow(2,(BL_SPACEDIM + 1));   // = 16 for 3D and 1 energy
+
+int          Castro::thornado_nSpecies   = 1;
+int          Castro::thornado_swE        = 0;
+Real         Castro::thornado_eL         = 0.; 
+Real         Castro::thornado_eR         = 300.; 
+int          Castro::thornado_ndimse     = 10;
+Real         Castro::thornado_zoome      = 1.0; 
+int          Castro::thornado_nplotvar   = 0;  // Note this only counts the node_averages, the others are already taken care of
+int          Castro::thornado_plot_node_averages = 0;
+
+Vector<std::string>  Castro::thornado_plotvar_names;
+
+#endif
 
 Real         Castro::num_zones_advanced = 0.0;
 
@@ -430,6 +446,10 @@ Castro::read_params ()
 
 #ifdef AMREX_PARTICLES
     read_particle_params();
+#endif
+
+#ifdef THORNADO
+    read_thornado_params();
 #endif
 
 #ifdef RADIATION
@@ -1035,7 +1055,6 @@ Castro::initData ()
   	   ZFILL(gridloc.lo()), ZFILL(gridloc.hi()));
 
 #endif
-
        }
 
 #ifdef AMREX_USE_CUDA
@@ -1150,6 +1169,19 @@ Castro::initData ()
 
        if (ng > 0)
 	   AmrLevel::FillPatch(*this, S_new, ng, cur_time, State_Type, 0, S_new.nComp());
+
+#ifdef THORNADO
+	  // Generate the initial thornado radiation data
+          init_thornado_data();
+
+          // Initialize dS to zero
+          MultiFab& dS_new    = get_new_data(Thornado_Fluid_Source_Type);
+          dS_new.setVal(0.);
+
+          // Initialize dR to zero
+          MultiFab& dR_new    = get_new_data(Thornado_Rad_Source_Type);
+          dR_new.setVal(0.);
+#endif
     }
 
     clean_state(S_new, cur_time, S_new.nGrow());
@@ -2262,6 +2294,12 @@ Castro::post_init (Real stop_time)
     }
 #endif
 
+#ifdef THORNADO
+      for (int k = finest_level-1; k>= 0; k--) {
+        getLevel(k).avgDown(Thornado_Type);
+      }
+#endif
+
 // Allow the user to define their own post_init functions.
 
 #ifdef DO_PROBLEM_POST_INIT
@@ -2977,9 +3015,21 @@ Castro::avgDown (int state_indx)
     MultiFab&  S_crse   = get_new_data(state_indx);
     MultiFab&  S_fine   = fine_lev.get_new_data(state_indx);
 
+#ifdef THORNADO
+    if ( (state_indx == Thornado_Type) || (state_indx == Thornado_Rad_Source_Type) )
+    {
+       average_down_thornado_data(S_fine, S_crse,
+                                  S_fine.nComp(), fine_ratio);
+    } else {
+       amrex::average_down(S_fine, S_crse,
+                           fgeom, cgeom,
+                           0, S_fine.nComp(), fine_ratio);
+    }
+#else
     amrex::average_down(S_fine, S_crse,
-			 fgeom, cgeom,
-			 0, S_fine.nComp(), fine_ratio);
+                        fgeom, cgeom,
+                        0, S_fine.nComp(), fine_ratio);
+#endif
 }
 
 void
@@ -3034,7 +3084,6 @@ Castro::errorEst (TagBoxArray& tags,
 void
 Castro::apply_problem_tags (TagBoxArray& tags, Real time)
 {
-
     BL_PROFILE("Castro::apply_problem_tags()");
 
     const Real* dx        = geom.CellSize();

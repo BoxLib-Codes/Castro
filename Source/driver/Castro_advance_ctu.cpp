@@ -191,6 +191,10 @@ Castro::do_advance_ctu(Real time,
         expand_state(S_new, cur_time, S_new.nGrow());
     }
 
+#ifdef THORNADO
+    create_thornado_source(dt);
+#endif
+
     // Do the second half of the reactions.
 
 #ifdef REACTIONS
@@ -210,10 +214,6 @@ Castro::do_advance_ctu(Real time,
 
     return dt;
 }
-
-
-
-
 
 bool
 Castro::retry_advance_ctu(Real& time, Real dt, int amr_iteration, int amr_ncycle)

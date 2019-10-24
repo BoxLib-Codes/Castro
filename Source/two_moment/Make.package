@@ -1,0 +1,126 @@
+# sources used with thornado
+# this is included if USE_THORNADO = TRUE
+
+# These live here
+
+CEXE_sources      += Castro_twomoment.cpp
+FEXE_headers      += TwoMoment_F.H
+ca_F90EXE_sources += two_moment_$(DIM)d.F90
+ca_F90EXE_sources += interpolate_fluid_$(DIM)d.F90
+ca_F90EXE_sources += dg_amr_helper_nd.F90
+
+CEXE_sources      += DG_Interpolater.cpp
+CEXE_headers      += DG_Interpolater.H
+
+ca_F90EXE_sources += derive_two_moment_nd.F90
+
+#  This lives in BLAS-3.8.0
+
+   ca_F90EXE_sources += dgemv.F90
+   ca_F90EXE_sources += lsame.F90
+
+#  These live in the thornado repo itself
+
+# In Modules/Numbers
+  ca_f90EXE_sources += KindModule.f90
+
+# In Modules/ProgramHeader 
+  ca_F90EXE_sources += ProgramHeaderModule.F90
+
+# In Modules/Library
+  ca_F90EXE_sources += DeviceModule.F90
+  ca_f90EXE_sources += LagrangePolynomialsModule.f90
+  ca_F90EXE_sources += LinearAlgebraModule.F90
+  ca_f90EXE_sources += QuadratureModule.f90
+  ca_f90EXE_sources += ReferenceElementModuleE.f90
+  ca_F90EXE_sources += ReferenceElementModuleX.F90
+  ca_F90EXE_sources += ReferenceElementModule.F90
+  ca_f90EXE_sources += PolynomialBasisModule_Lagrange.f90
+  ca_f90EXE_sources += PolynomialBasisModuleX_Lagrange.f90
+  ca_F90EXE_sources += ReferenceElementModuleX_Lagrange.F90
+  ca_f90EXE_sources += ReferenceElementModuleE_Lagrange.f90
+  ca_F90EXE_sources += ReferenceElementModule_Lagrange.F90
+  ca_f90EXE_sources += TimersModule.f90
+  ca_f90EXE_sources += UtilitiesModule.f90
+  ca_F90EXE_sources += ArrayUtilitiesModule.F90
+
+  ca_f90EXE_sources += SubcellReconstructionModule.f90
+
+# In Modules/Mesh
+  ca_f90EXE_sources += MeshModule.f90
+
+# In Modules/Geometry
+  ca_f90EXE_sources += GeometryFieldsModuleE.f90	    
+  ca_f90EXE_sources += GeometryFieldsModule.f90	   
+  ca_F90EXE_sources += GeometryComputationModule.F90
+  ca_f90EXE_sources += GeometryComputationModuleE.f90
+
+# In Modules/Fields
+  ca_F90EXE_sources += FluidFieldsModule.F90
+  ca_f90EXE_sources += RadiationFieldsModule.f90
+
+# In Modules/TwoMoment
+  ca_F90EXE_sources += TwoMoment_BoundaryConditionsModule.F90
+  ca_F90EXE_sources += TwoMoment_UtilitiesModule.F90
+  ca_F90EXE_sources += TwoMoment_NeutrinoMatterSolverModule.F90
+  ca_f90EXE_sources += TwoMoment_MeshRefinementModule.f90
+  ca_F90EXE_sources += TwoMoment_ClosureModule.F90
+
+ifeq ($(USE_THORNADO_GPU),TRUE)
+  ca_F90EXE_sources += TwoMoment_PositivityLimiterModule_GPU.F90
+  ca_F90EXE_sources += TwoMoment_DiscretizationModule_Streaming_GPU.F90
+  ca_F90EXE_sources += TwoMoment_DiscretizationModule_Collisions_Neutrinos_GPU.F90
+else
+  ca_F90EXE_sources += TwoMoment_PositivityLimiterModule.F90
+  ca_F90EXE_sources += TwoMoment_DiscretizationModule_Streaming.F90
+  ca_F90EXE_sources += TwoMoment_DiscretizationModule_Collisions_Neutrinos.F90
+endif
+
+# In Modules/Units
+  ca_f90EXE_sources += PhysicalConstantsModule.f90
+  ca_f90EXE_sources += UnitsModule.f90
+
+# In SandBox/Interface_CASTRO
+  ca_F90EXE_sources += ThornadoInitializationModule.F90
+  ca_F90EXE_sources += TimeSteppingModule_Castro.F90
+  ca_f90EXE_sources += DiscretizationModule_Dummy.f90
+
+# In Modules/EquationOfState
+  ca_F90EXE_sources += EquationOfStateModule_TABLE.F90
+
+# In Modules/Opacities
+  ca_F90EXE_sources += OpacityModule_TABLE.F90
+  ca_f90EXE_sources += NeutrinoOpacitiesModule.f90
+  ca_F90EXE_sources += NeutrinoOpacitiesComputationModule.F90
+
+# In weaklib/Distributions/Library
+  ca_f90EXE_sources += wlKindModule.f90
+  ca_f90EXE_sources += wlGridModule.f90
+  ca_f90EXE_sources += wlThermoStateModule.f90
+  ca_f90EXE_sources += wlDependentVariablesModule.f90
+  ca_F90EXE_sources += wlInterpolationModule.F90
+  ca_f90EXE_sources += wlIOModuleHDF.f90
+
+# In weaklib/Distributions/EOSSource
+  ca_f90EXE_sources += wlEquationOfStateTableModule.f90
+  ca_F90EXE_sources += wlEOSInversionModule.F90
+  ca_f90EXE_sources += wlEOSIOModuleHDF.f90
+
+# In weaklib/Distributions/OpacitySource
+  ca_f90EXE_sources += wlOpacityFieldsModule.f90
+  ca_f90EXE_sources += wlOpacityTableModule.f90
+  ca_f90EXE_sources += wlOpacityTableIOModuleHDF.f90
+
+ifeq ($(USE_THORNADO_GPU),TRUE)
+  ca_f90EXE_sources += CudaModule.f90
+  ca_f90EXE_sources += CublasModule.f90
+  ca_f90EXE_sources += CusolverModule.f90
+  ifeq ($(USE_MAGMA),TRUE)
+  ca_f90EXE_sources += MagmaModule.f90
+  endif
+  ifeq ($(USE_THORNADO_ACC),TRUE)
+  ca_f90EXE_sources += OpenACCModule.f90
+  else ifeq ($(USE_OMP_OFFLOAD), TRUE)
+  ca_f90EXE_sources += OpenMPModule.f90
+  endif
+endif

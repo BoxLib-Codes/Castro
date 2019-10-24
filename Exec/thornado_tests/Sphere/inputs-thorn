@@ -1,0 +1,146 @@
+
+amr.max_level       = 0 
+amr.n_cell          = 192 192 192 
+amr.max_grid_size   = 192
+
+amr.max_level       = 1
+amr.n_cell          = 96 96 96 
+amr.max_grid_size   = 48
+
+#max_step = 10
+
+castro.max_dt = 1.e-5
+
+# ------------------  THORNADO-SPECIFIC INPUTS -------------------
+thornado.nSpecies = 1
+thornado.eL       = 0
+thornado.eR       = 300
+thornado.ndimse   = 10
+thornado.zoome    = 1.4
+
+# ------------------  INPUTS TO MAIN PROGRAM  -------------------
+stop_time =  5.e-3
+
+# PROBLEM SIZE & GEOMETRY
+geometry.is_periodic = 0 0 0
+geometry.coord_sys   = 0  # 0 => cart, 1 => RZ  2=>spherical
+geometry.prob_lo     =  -1.e7     -1.e7     -1.e7
+geometry.prob_hi     = 1.e7    1.e7    1.e7 # 100km
+
+fabarray.mfiter_tile_size = 1024 1024 1024
+
+#amr.restart = "thorn_chk00400"
+
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+# 0 = Interior           3 = Symmetry
+# 1 = Inflow             4 = SlipWall
+# 2 = Outflow            5 = NoSlipWall
+# >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
+castro.lo_bc       =  2   2   2
+castro.hi_bc       =  2   2   2
+
+# WHICH PHYSICS
+castro.do_hydro = 0 
+
+castro.do_react = 0
+
+castro.ppm_type = 1
+castro.ppm_temp_fix = 0
+castro.ppm_reference_eigenvectors = 1
+
+castro.use_flattening = 1
+
+castro.riemann_solver = 1
+
+castro.allow_negative_energy = 0
+
+# TIME STEP CONTROL
+castro.cfl            = 0.5    # cfl number for hyperbolic system
+castro.init_shrink    = 0.1     # scale back initial timestep
+castro.change_max     = 1.1    # scale back initial timestep
+castro.dt_cutoff      = 5.e-20  # level 0 timestep below which we halt
+
+# DIAGNOSTICS & VERBOSITY
+castro.sum_interval   = 1       # timesteps between computing mass
+castro.v              = 1       # verbosity in Castro.cpp
+amr.v                 = 1       # verbosity in Amr.cpp
+#amr.grid_log        = grdlog  # name of grid logging file
+
+# REFINEMENT / REGRIDDING 
+amr.ref_ratio       = 2 2 2 2 # refinement ratio
+amr.regrid_int      = 2 2 2 2 # how often to regrid
+amr.blocking_factor = 4       # block factor in grid generation
+amr.n_error_buf     = 2 2 2 2 # number of buffer cells in error est
+
+# CHECKPOINT FILES
+amr.checkpoint_files_output = 0
+amr.check_file      = thorn_chk  # root name of checkpoint file
+amr.check_int       = 100         # number of timesteps between checkpoints
+#amr.check_int       = 1000000
+
+# PLOTFILES
+amr.plot_files_output = 1
+amr.plot_file       = thorn_plt  # root name of plotfile
+amr.plot_int        = 10          # number of timesteps between plotfiles
+
+# Good way to trap errors
+amrex.fpe_trap_invalid =  1
+
+################################################################
+################################################################
+# If you want to see Hx_avg Hy_avg Hz_avg J_avg then set
+# amr.derive_plot_vars = pressure Hx_avg Hy_avg Hz_avg J_avg
+# If not then set
+# amr.derive_plot_vars = pressure 
+################################################################
+################################################################
+
+################################################################
+################################################################
+# If you want to see the node-averaged moments then set
+# thornado.plot_node_averages = 1
+# If not then set
+# thornado.plot_node_averages = 0
+################################################################
+################################################################
+
+################################################################
+################################################################
+# If you want to see all the thornado state components then set
+# amr.plot_vars        = ALL
+# If not then set
+# amr.plot_vars        = density xmom ymom zmom eden eint Temp
+################################################################
+################################################################
+
+################################################################
+################################################################
+# HERE YOU ONLY SEE FOUR MOMENTS --- AVERAGED OVER NODES AND E
+#amr.derive_plot_vars        = pressure Hx_avg Hy_avg Hz_avg J_avg
+#amr.plot_vars               = density xmom ymom zmom eden eint Temp
+#thornado.plot_node_averages = 0
+################################################################
+################################################################
+
+################################################################
+################################################################
+# HERE YOU SEE FOUR MOMENTS AND ALL THE THORNADO DATA
+#amr.derive_plot_vars        = pressure Hx_avg Hy_avg Hz_avg J_avg
+#amr.plot_vars               = ALL
+#thornado.plot_node_averages = 0
+################################################################
+################################################################
+
+################################################################
+################################################################
+# Here you see four moments and the node averages but not the
+#  entire thornado data
+amr.derive_plot_vars        = pressure Hx_avg Hy_avg Hz_avg J_avg Ye
+amr.plot_vars               = density xmom ymom zmom eden eint Temp rho_Ye
+thornado.plot_node_averages = 1
+################################################################
+################################################################
+
+#PROBIN FILENAME
+amr.probin_file = probin-thorn
+

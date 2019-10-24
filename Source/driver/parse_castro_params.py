@@ -404,20 +404,20 @@ def write_meth_module(plist, meth_template):
 
             mo.write("\n")
             mo.write("    !$acc update &\n")
-            mo.write("    !$acc device(")
-
             for n, p in enumerate(params):
-                if p.f90_dtype == "string":
-                    continue
-                mo.write("{}".format(p.f90_name))
+                if p.f90_dtype == "string": continue
 
-                if n == len(params)-1:
-                    mo.write(")\n")
+                if p.ifdef is not None:
+                    mo.write("#ifdef {}\n".format(p.ifdef))
+                mo.write("    !$acc device({})".format(p.f90_name))
+
+                if n != len(params)-1:
+                    mo.write(" &\n")
                 else:
-                    if n % 3 == 2:
-                        mo.write(") &\n    !$acc device(")
-                    else:
-                        mo.write(", ")
+                    mo.write("\n")
+
+                if p.ifdef is not None:
+                    mo.write("#endif\n")
 
         elif line.find("@@free_castro_params@@") >= 0:
 

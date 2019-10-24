@@ -146,6 +146,12 @@ module eos_type_module
     real(rt) :: dpde
     real(rt) :: dpdr_e
 
+#ifdef NUCLEAR_EOS
+    real(rt) :: electron_chemical_potential
+    real(rt) :: proton_chemical_potential
+    real(rt) :: neutron_chemical_potential
+#endif
+
     real(rt) :: cv
     real(rt) :: cp
     real(rt) :: xne

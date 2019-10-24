@@ -42,6 +42,11 @@ enum StateType { State_Type = 0,
 #ifdef REACTIONS
 		 Simplified_SDC_React_Type
 #endif
+#ifdef THORNADO
+		 Thornado_Type,
+		 Thornado_Fluid_Source_Type,
+		 Thornado_Rad_Source_Type
+#endif
 };
 
 // Create storage for all source terms.
@@ -294,6 +299,12 @@ public:
     void MAESTRO_init ();
 #endif
 
+#ifdef THORNADO
+    static int init_thornado();
+    void init_thornado_data ();
+    void init_thornado_on_patch();
+    void create_thornado_source(amrex::Real dt);
+#endif
 
 ///
 ///
@@ -1663,6 +1674,9 @@ public:
 
 
     static amrex::Vector<std::string> source_names;
+#ifdef THORNADO
+    static amrex::Vector<std::string> thornado_plotvar_names;
+#endif
 
 
 ///
@@ -1683,6 +1697,22 @@ public:
 ///     non-integer number.
 ///
     static amrex::Real num_zones_advanced;
+
+#ifdef THORNADO
+    static int THORNADO_NMOMENTS;
+    static int THORNADO_RAD_NDOF;
+
+    static int         thornado_nSpecies;
+
+    // These are the lower and upper limits of the energy groups
+    static int         thornado_swE;
+    static amrex::Real thornado_eL;
+    static amrex::Real thornado_eR;
+    static int         thornado_ndimse;
+    static amrex::Real thornado_zoome;
+    static int         thornado_nplotvar;
+    static int         thornado_plot_node_averages;
+#endif
 
 #ifdef AMREX_USE_CUDA
 ///
@@ -1706,6 +1736,16 @@ protected:
 /// @param ng number of ghost cells
 ///
     amrex::iMultiFab& build_interior_boundary_mask (int ng);
+
+
+#ifdef THORNADO
+    //
+    // Read thornado-related inputs
+    //
+    static void read_thornado_params();
+
+    std::unique_ptr<amrex::MultiFab> get_thornado_plotMF ();
+#endif
 
 #ifdef SELF_GRAVITY
     int get_numpts();
@@ -1976,6 +2016,11 @@ protected:
 /// @param state_indx   Index of state to average down
 ///
     void avgDown (int state_indx);
+
+#ifdef THORNADO
+    void average_down_thornado_data(const amrex::MultiFab& S_fine, amrex::MultiFab& S_crse, 
+                                    int ncomp, const amrex::IntVect& ratio);
+#endif
 
     void buildMetrics ();
 

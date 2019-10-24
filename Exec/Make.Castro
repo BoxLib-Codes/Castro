@@ -136,6 +136,54 @@ ifeq ($(USE_GR), TRUE)
   DEFINES += -DGR_GRAV
 endif
 
+ifeq ($(USE_THORNADO), TRUE)
+  DEFINES += -DTHORNADO
+  DEFINES += -DMOMENT_CLOSURE_$(MOMENT_CLOSURE)
+  DEFINES += -DNEUTRINO_MATTER_SOLVER_$(NEUTRINO_MATTER_SOLVER)
+  ifeq ($(findstring weaklib, $(EOS_DIR)), weaklib)
+    DEFINES += -DMICROPHYSICS_WEAKLIB
+  endif
+  ifeq ($(USE_THORNADO_GPU),TRUE)
+    DEFINES += -DTHORNADO_GPU
+    LIBRARIES += -lcusolver -lcublas
+    ifeq ($(USE_MAGMA),TRUE)
+      ifndef MAGMA_HOME
+        $(error USE_MAGMA=TRUE, but MAGMA_DIR not defined)
+      else
+        DEFINES += -DTHORNADO_LA_MAGMA
+        LIBRARY_LOCATIONS += $(MAGMA_DIR)/lib
+        LIBRARIES += -lmagma
+      endif
+    else
+      DEFINES += -DTHORNADO_LA_CUBLAS
+    endif
+    ifeq ($(USE_THORNADO_ACC),TRUE)
+      DEFINES += -DTHORNADO_OACC
+    else ifeq ($(USE_OMP_OFFLOAD), TRUE)
+      DEFINES += -DTHORNADO_OMP_OL
+    endif
+  else
+    DEFINES += -DTHORNADO_LA_LAPACK
+  endif
+endif
+
+ifeq ($(findstring weaklib, $(EOS_DIR)), weaklib)
+  DEFINES += -DCASTRO_CALL_WEAKLIB
+  DEFINES += -DNUCLEAR_EOS
+  ifeq ($(USE_THORNADO_GPU),TRUE)
+    DEFINES += -DWEAKLIB_GPU
+    ifeq ($(USE_THORNADO_ACC),TRUE)
+      DEFINES += -DWEAKLIB_OACC
+    else ifeq ($(USE_OMP_OFFLOAD), TRUE)
+      DEFINES += -DWEAKLIB_OMP_OL
+    endif
+  endif
+endif
+
+ifeq ($(findstring stellarcollapse, $(EOS_DIR)), stellarcollapse)
+   DEFINES += -DNUCLEAR_EOS
+endif
+
 ifeq ($(USE_REACT), TRUE)
   Bdirs += Source/reactions
   DEFINES += -DREACTIONS
@@ -226,7 +274,35 @@ ifeq ($(USE_PARTICLES), TRUE)
   Bdirs += Source/particles
 endif
 
+ifeq ($(USE_THORNADO), TRUE)
+
+  EXTERN_CORE += $(TOP)/Util/LAPACK
+
+  Thdirs := $(THORNADO_HOME)/SandBox/Interface_CASTRO
+  Thdirs += $(THORNADO_HOME)/Modules/Numbers
+  Thdirs += $(THORNADO_HOME)/Modules/ProgramHeader
+  Thdirs += $(THORNADO_HOME)/Modules/Library
+  Thdirs += $(THORNADO_HOME)/Modules/Mesh
+  Thdirs += $(THORNADO_HOME)/Modules/Fields
+  Thdirs += $(THORNADO_HOME)/Modules/Geometry
+  Thdirs += $(THORNADO_HOME)/Modules/TwoMoment
+  Thdirs += $(THORNADO_HOME)/Modules/Units
+  Thdirs += $(THORNADO_HOME)/Modules/EquationOfState 
+  Thdirs += $(THORNADO_HOME)/Modules/Opacities 
+  Thdirs += $(THORNADO_HOME)/Modules/Library
+  Thdirs += $(WEAKLIB_HOME)/Distributions/Library
+  Thdirs += $(WEAKLIB_HOME)/Distributions/EOSSource
+  Thdirs += $(WEAKLIB_HOME)/Distributions/OpacitySource
+
+  Blocs += $(foreach dir, $(Thdirs), $(dir))
+# Bpack += $(foreach dir, $(Thdirs), $(dir)/Make.package)
+
+  Bdirs  += Source/two_moment
+# Bpack += $(TOP)/Source/two_moment/Make.package
+endif
+
 Bpack += $(foreach dir, $(Bdirs), $(TOP)/$(dir)/Make.package)
+
 Blocs += $(foreach dir, $(Bdirs), $(TOP)/$(dir))
 
 
@@ -262,7 +338,6 @@ ifeq ($(USE_MLMG), TRUE)
 endif
 
 Bpack	+= $(foreach dir, $(Pdirs), $(AMREX_HOME)/Src/$(dir)/Make.package)
-
 
 #------------------------------------------------------------------------------
 # microphysics 
@@ -373,12 +448,16 @@ ifeq ($(USE_HYPRE), TRUE)
 endif
 
 ifeq ($(USE_HDF5), TRUE)
-  INCLUDE_LOCATIONS += $(HDF5_DIR)/include
-  INCLUDE_LOCATIONS += $(HDF5_INCL)
-  LIBRARY_LOCATIONS += $(HDF5_DIR)/lib
-  LIBRARIES += -lhdf5 -lhdf5_fortran -lhdf5 -lz
+  DEFINES += -DBL_HDF5
+  INCLUDE_LOCATIONS += $(HDF5_HOME)/include 
+  LIBRARIES         += -L$(HDF5_HOME)/lib -lhdf5_fortran -lhdf5
 endif
 
+ifeq ($(USE_THORNADO), TRUE)
+  LIBRARY_LOCATIONS += -L$(LAPACK_HOME)
+  LIBRARIES         += -llapack 
+  LIBRARIES         += -lblas 
+endif
 
 #------------------------------------------------------------------------------
 # include all of the necessary directories
@@ -399,7 +478,6 @@ mega_f.F90: $(ca_F90EXE_sources) $(ca_f90EXE_sources)
 
 INCLUDE_LOCATIONS += $(Blocs)
 VPATH_LOCATIONS   += $(Blocs)
-
 
 #include $(AMREX_HOME)/Src/F_BaseLib/FParallelMG.mak
 
@@ -549,3 +627,4 @@ clean::
 print-%::
 	@echo "$* is $($*)"
 	@$(RM) AMReX_buildInfo.cpp
+

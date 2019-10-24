@@ -436,6 +436,10 @@ contains
              ! new velocity; it is only a restraint on what the initial
              ! timestep at the old-time should have been.
 
+             if (do_hydro .eq. 0) then
+                dt_new = 1.0e-7
+             endif 
+
              if (do_hydro .eq. 1) then
 
                 eos_state % rho = s_old(i,j,k,URHO )
