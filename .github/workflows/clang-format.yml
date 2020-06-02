@@ -1,0 +1,35 @@
+name: clang-format
+
+on:
+  pull_request:
+    branches: development
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Run clang-format
+      run: |
+        clang-format --version
+        find Source/driver -maxdepth 4 -regex '.*\.\(cpp\|h\|H\)' | xargs clang-format -i -style=file
+
+    - name: Check for changes
+      run: |
+        if [[ -z "$(git status --porcelain)" ]]; then
+            echo "clang-format made no modifications"
+            exit 0
+        else 
+            echo "clang-format has found formatting errors"
+            git diff HEAD | tee clang-format-diff.txt
+            exit 1
+        fi
+      
+    - name: Archive git diff report
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v1
+      with:
+        name: clang-format-diff
+        path: clang-format-diff.txt

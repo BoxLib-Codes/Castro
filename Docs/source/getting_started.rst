@@ -85,6 +85,15 @@ is installed on your machine—we recommend version 1.7.x or higher.
    variable to point to the ``Microphysics/`` directory. Castro will
    look there instead of in its local ``external/`` subdirectory.
 
+#. (optional, for developers) We use ``clang-format`` to format the code 
+   in the Castro repository. To automate this, we recommend setting up a 
+   pre-commit hook by copying the script in the ``Utils`` directory. You 
+   will also need to change the permissions of the script to be 
+   executable::
+
+        cp Utils/scripts/pre-commit .git/hooks
+        chmod +x .git/hooks/pre-commit
+
 Building the Code
 =================
 
