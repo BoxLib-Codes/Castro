@@ -238,30 +238,35 @@ Castro::prim_half(const Box& bx,
   [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k) noexcept
   {
 
-    Real divF[NUM_STATE+3];
-    Real divF_q[NQ];
-    Real q_zone[NQ];
+    Array1D<Real, 0, NQ-1> q_zone;
+    Array1D<Real, 0, NUM_STATE+2> U_zone;
+
+    // we come in with q, so we need to compute this to U
+    for (int n = 0; n < NQ; n++) {
+      q_zone(n) = q_arr(i,j,k,n);
+    }
+
+    Real gam1;
+    PToC(q_zone, U_zone, gam1);
+
+    // now do the conservative update of U
 
     for (int n = 0; n < NUM_STATE+3; n++) {
-      divF[n] = (flxx(i+1,j,k,n) - flxx(i,j,k,n)) / dx[0];
+      U_zone(n) -= 0.5 * dt * (flxx(i+1,j,k,n) - flxx(i,j,k,n)) / dx[0];
 #if AMREX_SPACEDIM >= 2
-      divF[n] += (flxy(i,j+1,k,n) - flxy(i,j,k,n)) / dx[1];
+      U_zone(n) -= 0.5 * dt * (flxy(i,j+1,k,n) - flxy(i,j,k,n)) / dx[1];
 #endif
 #if AMREX_SPACEDIM == 3
-      divF[n] += (flxz(i,j,k+1,n) - flxz(i,j,k,n)) / dx[2];
+      U_zone(n) -= 0.5 * dt * (flxz(i,j,k+1,n) - flxz(i,j,k,n)) / dx[2];
 #endif
     }
 
-    // that is a flux of conserved variables -- transform it to primitive
-    for (int n = 0; n < NQ; n++) {
-      q_zone[n] = q_arr(i,j,k,n);
-    }
-
-    qflux(divF_q, divF, q_zone);
+    // now convert this to q
+    ConsToPrim(q_zone.arr, U_zone.arr);
 
     // Right below eq. 48
     for (int n = 0; n < NQ; n++) {
-      q2D(i,j,k,n) = q_arr(i,j,k,n) - 0.5_rt * dt * divF_q[n];
+      q2D(i,j,k,n) = q_zone(n);
     }
   });
 }
