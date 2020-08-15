@@ -86,6 +86,9 @@
                   amrex::Array4<amrex::Real const> const& flxd2,
                   amrex::Array4<amrex::Real const> const& Ed1,
                   amrex::Array4<amrex::Real const> const& Ed3,
+                  amrex::Array4<amrex::Real const> const& Ex,
+                  amrex::Array4<amrex::Real const> const& Ey,
+                  amrex::Array4<amrex::Real const> const& Ez,
                   const int d1, const int d2, const int d3,
                   const amrex::Real dt);
 
@@ -100,7 +103,18 @@
               amrex::Array4<amrex::Real const> const& Ed,
               amrex::Array4<amrex::Real const> const& Ed1,
               amrex::Array4<amrex::Real const> const& Ed2,
+              amrex::Array4<amrex::Real const> const& Ex,
+              amrex::Array4<amrex::Real const> const& Ey,
+              amrex::Array4<amrex::Real const> const& Ez,
               const int d, const int d1, const int d2, const amrex::Real dt);
+
+    void
+    get_inplane_Bs_transverse_flux(const int face, const int comp, const int tdir,
+                                   const int i, const int j, const int k,
+                                   amrex::Array4<amrex::Real const> const& Ex,
+                                   amrex::Array4<amrex::Real const> const& Ey,
+                                   amrex::Array4<amrex::Real const> const& Ez,
+                                   amrex::Real& Fl, amrex::Real& Fr);
 
     void
     hlld(const amrex::Box& bx,

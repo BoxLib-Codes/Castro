@@ -8,6 +8,157 @@
 using namespace amrex;
 
 void
+Castro::get_inplane_Bs_transverse_flux(const int face, const int comp, const int tdir,
+                                       const int i, const int j, const int k,
+                                       Array4<Real const> const& Ex,
+                                       Array4<Real const> const& Ey,
+                                       Array4<Real const> const& Ez,
+                                       Real& Fl, Real& Fr) {
+
+  // this is for the 2 B components that are on a face (e.g., y and z on the x faces)
+  // face is the coordinate direction of the face
+  // comp is the component of the B field we are dealing with
+  // tdir is the transverse direction (orthogonal to comp)
+
+  // only the fields tangental to the face direction (in-plane)
+  BL_ASSERT(face != comp);
+
+  // for a field pointing in direction comp, there is no transverse update in the comp direction
+  BL_ASSERT(comp != tdir);
+
+
+  // we are working on a face, and considering B field component in
+  // the plane of the face.  there are 2 transverse flux differences
+  // that we need to account for.
+
+  if (face == 0) {
+    // on the x-face, the y and z components are in plane
+
+    if (comp == 1) {
+      // By on the x-face should get corrected by an x and z flux difference
+
+      if (tdir == 0) {
+        // Fx_{i+1/2,j,k}(By) = - Ez_{i+1/2,j,k}
+        //                    = -1/2 [ Ez_{i+1/2,j-1/2,k} + Ez_{i+1/2,j+1/2,k} ]
+
+        Fr = -0.5_rt * (Ez(i+1,j,k) + Ez(i+1,j+1,k));
+        Fl = -0.5_rt * (Ez(i,j,k) + Ez(i,j+1,k));
+
+      } else if (tdir == 2) {
+        // Fz_{i,j,k+1/2}(By) = Ex_{i,j,k+1/2}
+        //                    = 1/2 [ Ex_{i,j-1/2,k+1/2} + Ex_{i,j+1/2,k+1/2} ]
+
+        Fr = 0.5_rt * (Ex(i,j,k+1) + Ex(i,j+1,k+1));
+        Fl = 0.5_rt * (Ex(i,j,k) + Ex(i,j+1,k));
+
+      }
+
+    } else if (comp == 2) {
+      // Bz on the x-face should get corrected by an x and y flux difference
+
+      if (tdir == 0) {
+        // Fx_{i+1/2,j,k}(Bz) = Ey_{i+1/2,j,k}
+        //                    = 1/2 [ Ey_{i+1/2,j,k-1/2} + Ey_{i+1/2,j,k+1/2} ]
+
+        Fr = 0.5_rt * (Ey(i+1,j,k) + Ey(i+1,j,k+1));
+        Fl = 0.5_rt * (Ey(i,j,k) + Ey(i,j,k+1));
+
+      } else if (tdir == 1) {
+        // Fy_{i,j+1/2,k}(Bz) = -Ex_{i,j+1/2,k}
+        //                    = -1/2 [ Ex_{i,j+1/2,k-1/2} + Ex_{i,j+1/2,k+1/2} ]
+
+        Fr = -0.5_rt * (Ex(i,j+1,k) + Ex(i,j+1,k+1));
+        Fl = -0.5_rt * (Ex(i,j,k) + Ex(i,j,k+1));
+
+      }
+
+    }
+
+  } else if (face == 1) {
+
+    if (comp == 0) {
+      // Bx on the y-face should get corrected by an y and z flux difference
+
+      if (tdir == 1) {
+        // Fy_{i,j+1/2,k}(Bx) = Ez_{i,j+1/2,k}
+        //                    = 1/2 [ Ez_{i-1/2,j+1/2,k} + Ez_{i+1/2,j+1/2,k} ]
+
+        Fr = 0.5_rt * (Ez(i,j+1,k) + Ez(i+1,j+1,k));
+        Fl = 0.5_rt * (Ez(i,j,k) + Ez(i+1,j,k));
+
+      } else if (tdir == 2) {
+        // Fz_{i,j,k+1/2}(Bx) = -Ey_{i,j,k+1/2}
+        //                    = -1/2 (Ey_{i-1/2,j,k+1/2} + Ey_{i+1/2,j,k+1/2})
+
+        Fr = -0.5_rt * (Ey(i,j,k+1) + Ey(i+1,j,k+1));
+        Fl = -0.5_rt * (Ey(i,j,k) + Ey(i+1,j,k));
+      }
+
+    } else if (comp == 2) {
+      // Bz on the y-face should get corrected by an x and y flux difference
+
+      if (tdir == 0) {
+        // Fx_{i+1/2,j,k}(Bz) = Ey_{i+1/2,j,k}
+        //                    = 1/2 [ Ey_{i+1/2,j,k-1/2} + Ey_{i+1/2,j,k+1/2} ]
+
+        Fr = 0.5_rt * (Ey(i+1,j,k) + Ey(i+1,j,k+1));
+        Fl = 0.5_rt * (Ey(i,j,k) + Ey(i,j,k+1));
+
+      } else if (tdir == 1) {
+        // Fy_{i,j+1/2,k}(Bz) = -Ex_{i,j+1/2,k}
+        //                    = -1/2 [ Ex_{i,j+1/2,k-1/2} + Ex_{i,j+1/2,k+1/2} ]
+
+        Fr = -0.5_rt * (Ex(i,j+1,k) + Ex(i,j+1,k+1));
+        Fl = -0.5_rt * (Ex(i,j,k) + Ex(i,j,k+1));
+      }
+
+    }
+
+  } else {  // face == 2
+
+    if (comp == 0) {
+      //  Bx on the z-face should get corrected by a y and z flux difference
+
+      if (tdir == 1) {
+        // Fy_{i,j+1/2,k}(Bx) = Ez_{i,j+1/2,k}
+        //                    = 1/2 [ Ez_{i-1/2,j+1/2,k} + Ez_{i+1/2,j+1/2,k}
+
+        Fr = 0.5_rt * (Ez(i,j+1,k) + Ez(i+1,j+1,k));
+        Fl = 0.5_rt * (Ez(i,j,k) + Ez(i+1,j,k));
+
+      } else if (tdir == 2) {
+        // Fz_{i,j,k+1/2}(Bx) = -Ey_{i,j,k+1/2}
+        //                    = -1/2 [ Ey_{i-1/2,j,k+1/2} + Ey_{i+1/2,j,k+1/2} ]
+
+        Fr = -0.5_rt * (Ey(i,j,k+1) + Ey(i+1,j,k+1));
+        Fl = -0.5_rt * (Ey(i,j,k) + Ey(i+1,j,k));
+      }
+
+    } else if (comp == 1) {
+      // By on the z-face should get corrected by a x and z flux difference
+
+      if (tdir == 0) {
+        // Fx_{i+1/2,j,k}(By) = -Ez_{i+1/2,j,k}
+        //                    = -1/2 [ Ez_{i+1/2,j-1/2,k} + Ez_{i+1/2,j+1/2,k} ]
+
+        Fr = -0.5_rt * (Ez(i+1,j,k) + Ez(i+1,j+1,k));
+        Fl = -0.5_rt * (Ez(i,j,k) + Ez(i,j+1,k));
+
+      } else if (tdir == 2) {
+        // Fz_{i,j,k+1/2}(By) = Ex_{i,j,k+1/2}
+        //                    = 1/2 [ Ex_{i,j-1/2,k+1/2} + Ex_{i,j+1/2,k+1/2} ]
+
+        Fr = 0.5_rt * (Ex(i,j,k+1) + Ex(i,j+1,k+1));
+        Fl = 0.5_rt * (Ex(i,j,k) + Ex(i,j+1,k));
+      }
+
+    }
+
+  }
+
+}
+
+void
 Castro::corner_couple(const Box& bx,
                       Array4<Real> const& qr_out,
                       Array4<Real> const& ql_out,
@@ -16,6 +167,9 @@ Castro::corner_couple(const Box& bx,
                       Array4<Real const> const& flxd2,
                       Array4<Real const> const& Ed1,
                       Array4<Real const> const& Ed3,
+                      Array4<Real const> const& Ex,
+                      Array4<Real const> const& Ey,
+                      Array4<Real const> const& Ez,
                       const int d1, const int d2, const int d3,
                       const Real dt) {
 
@@ -46,12 +200,6 @@ Castro::corner_couple(const Box& bx,
 
   int b[3] = {};
 
-  // for indexing the electric field
-
-  int err[3] = {};
-  int elr[3] = {};
-  int erl[3] = {};
-  int ell[3] = {};
 
   // update the state on interface direction d1 with the input flux in direction d2
 
@@ -65,18 +213,6 @@ Castro::corner_couple(const Box& bx,
   // for the normal B component
   b[d2] = 1;
 
-  // err will capture the right state in both transverse directions
-  // (e.g. Ez_{i+1/2,j+1/2,k})
-  err[d2] = 1;
-  err[d3] = 1;
-
-  // elr will capture the right state in the second transverse direction
-  // (e.g. Ez_{i-1/2,j+1/2,k})
-  elr[d3] = 1;
-
-  // erl will capture the right state in the first transverse direction
-  // (e.g. Ez_{i+1/2,j-1/2,k})
-  erl[d2] = 1;
 
   // ell is the lower-left E in both directions
   // (e.g. Ez_{i-1/2,j-1/2,k})
@@ -137,9 +273,14 @@ Castro::corner_couple(const Box& bx,
     // we use err(:) for the first E term, elr(:) for the
     // second, and erl(:) for the third
 
-    utmp[UMAGD3] = ur(i,j,k,UMAGD3) + sgn * 0.5_rt * cdtdx *
-      ((Ed1(i+err[0],j+err[1],k+err[2]) - Ed1(i+elr[0],j+elr[1],k+elr[2])) +
-       (Ed1(i+erl[0],j+erl[1],k+erl[2]) - Ed1(i,j,k)));
+    Real Fl;
+    Real Fr;
+
+    get_inplane_Bs_transverse_flux(d1, d3, d2, i, j, k,
+                                   Ex, Ey, Ez,
+                                   Fl, Fr);
+
+    utmp[UMAGD3] = ur(i,j,k,UMAGD3) - cdtdx * (Fr - Fl);
 
     // the component pointing in the transverse update direction, d2, is unchanged
     utmp[UMAGD2] = ur(i,j,k,UMAGD2);
@@ -161,10 +302,6 @@ Castro::corner_couple(const Box& bx,
   // The in-plane B component at B_{i-1/2,j,k,L} uses the information one zone to the left
   // in direction d1
 
-  err[d1] -= 1;
-  elr[d1] -= 1;
-  erl[d1] -= 1;
-  ell[d1] -= 1;
 
   amrex::ParallelFor(bx,
   [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k) noexcept
@@ -188,12 +325,29 @@ Castro::corner_couple(const Box& bx,
 
     // left state on the interface (e.g. B_{i-1/2,j,k,L} or `+` in MM notation)
 
+    int ii = i;
+    int jj = j;
+    int kk = k;
+
+    if (d1 == 0) {
+      ii -= 1;
+    } else if (d1 == 1) {
+      jj -= 1;
+    } else {
+      kk -= 1;
+    }
+
     utmp[UMAGD1] = ul(i,j,k,UMAGD1) - sgn * cdtdx *
       (Ed3(i+b[0],j+b[1],k+b[2]) - Ed3(i,j,k));
 
-    utmp[UMAGD3] = ul(i,j,k,UMAGD3) + sgn * 0.5_rt * cdtdx *
-      ((Ed1(i+err[0],j+err[1],k+err[2]) - Ed1(i+elr[0],j+elr[1],k+elr[2])) +
-       (Ed1(i+erl[0],j+erl[1],k+erl[2]) - Ed1(i+ell[0],j+ell[1],k+ell[2])));
+    Real Fl;
+    Real Fr;
+
+    get_inplane_Bs_transverse_flux(d1, d3, d2, ii, jj, kk,
+                                   Ex, Ey, Ez,
+                                   Fl, Fr);
+
+    utmp[UMAGD3] = ul(i,j,k,UMAGD3) - cdtdx * (Fr - Fl);
 
     utmp[UMAGD2] = ul(i,j,k,UMAGD2);
 
@@ -217,6 +371,9 @@ Castro::half_step(const Box& bx,
                   Array4<Real const> const& Ed,
                   Array4<Real const> const& Ed1,
                   Array4<Real const> const& Ed2,
+                  Array4<Real const> const& Ex,
+                  Array4<Real const> const& Ey,
+                  Array4<Real const> const& Ez,
                   const int d, const int d1, const int d2, const Real dt) {
 
   // Final transverse flux corrections to the conservative state
@@ -239,19 +396,6 @@ Castro::half_step(const Box& bx,
   int a1[3] = {};
   int a2[3] = {};
 
-  int err[3] = {};
-  int erl[3] = {};
-  int elr[3] = {};
-  int ell[3] = {};
-
-  int e1rr[3] = {};
-  int e1rl[3] = {};
-  int e1lr[3] = {};
-
-  int e2rr[3] = {};
-  int e2rl[3] = {};
-  int e2lr[3] = {};
-
   Real hdtdx = 0.5_rt * dt / dx[d];
   int sgn = -1 * epsilon_ijk(d, d1, d2);
 
@@ -263,30 +407,6 @@ Castro::half_step(const Box& bx,
 
   c1r[d1] = 1;  // add +1 to the d1 direction in the first flxd1 term of the subtraction
   c2r[d2] = 1;  // add +1 to the d2 direction in the first flxd2 term of the subtraction
-
-  // for Ed
-  err[d1] = 1;
-  err[d2] = 1;
-
-  erl[d1] = 1;
-
-  elr[d2] = 1;
-
-  // for Ed1
-  e1rr[d] = 1;
-  e1rr[d2] = 1;
-
-  e1lr[d2] = 1;
-
-  e1rl[d] = 1;
-
-  // for Ed2
-  e2rr[d] = 1;
-  e2rr[d1] = 1;
-
-  e2lr[d1] = 1;
-
-  e2rl[d] = 1;
 
   // for the normal component of B
   a1[d2] = 1;  // shift on first term of Ed1 substraction, in d2 direction
@@ -330,20 +450,30 @@ Castro::half_step(const Box& bx,
     // Bd1 -- this is one of the components of B in the plane of the face d
     // Eq.46 in Miniati
 
-    utmp[UMAGD1] = ur(i,j,k,UMAGD1) + sgn * 0.5_rt * hdtdx *
-      ((Ed(i+err[0],j+err[1],k+err[2]) - Ed(i+erl[0],j+erl[1],k+erl[2])) +
-       (Ed(i+elr[0],j+elr[1],k+elr[2]) - Ed(i+ell[0],j+ell[1],k+ell[2])) -
-       (Ed2(i+e2rr[0],j+e2rr[1],k+e2rr[2]) - Ed2(i+e2lr[0],j+e2lr[1],k+e2lr[2])) -
-       (Ed2(i+e2rl[0],j+e2rl[1],k+e2rl[2]) - Ed2(i+ell[0],j+ell[1],k+ell[2])));
+    Real F1l;
+    Real F1r;
+    Real F2l;
+    Real F2r;
 
-    // Bd2 -- this is the other component of B in the plane of the face d
-    // Eq. 46 in Miniati
+    get_inplane_Bs_transverse_flux(d, d1, d, i, j, k,
+                                   Ex, Ey, Ez,
+                                   F1l, F1r);
 
-    utmp[UMAGD2] = ur(i,j,k,UMAGD2) - sgn * 0.5_rt * hdtdx *
-      ((Ed(i+err[0],j+err[1],k+err[2]) - Ed(i+elr[0],j+elr[1],k+elr[2])) +
-       (Ed(i+erl[0],j+erl[1],k+erl[2]) - Ed(i+ell[0],j+ell[1],k+ell[2])) -
-       (Ed1(i+e1rr[0],j+e1rr[1],k+e1rr[2]) - Ed1(i+e1lr[0],j+e1lr[1],k+e1lr[2])) -
-       (Ed1(i+e1rl[0],j+e1rl[1],k+e1rl[2]) - Ed1(i+ell[0],j+ell[1],k+ell[2])));
+    get_inplane_Bs_transverse_flux(d, d1, d2, i, j, k,
+                                   Ex, Ey, Ez,
+                                   F2l, F2r);
+
+    utmp[UMAGD1] = ur(i,j,k,UMAGD1) - hdtdx * ((F1r - F1l) + (F2r - F2l));
+
+    get_inplane_Bs_transverse_flux(d, d2, d, i, j, k,
+                                   Ex, Ey, Ez,
+                                   F1l, F1r);
+
+    get_inplane_Bs_transverse_flux(d, d2, d1, i, j, k,
+                                   Ex, Ey, Ez,
+                                   F2l, F2r);
+
+    utmp[UMAGD2] = ur(i,j,k,UMAGD2) - hdtdx * ((F1r - F1l) + (F2r - F2l));
 
     // convert to primitive
 
@@ -366,21 +496,7 @@ Castro::half_step(const Box& bx,
     // left state on the interface (e.g., B_{i-1/2,j,k,L} or `+` in MM notation)
 
     // The in-plane B component at B_{i-1/2,j,k,L} uses the information one zone to the left
-    // in direction d1
-
-    err[d] -= 1;
-    erl[d] -= 1;
-    elr[d] -= 1;
-    ell[d] -= 1;
-
-    e1rr[d] -= 1;
-    e1rl[d] -= 1;
-    e1lr[d] -= 1;
-
-    e2rr[d] -= 1;
-    e2rl[d] -= 1;
-    e2lr[d] -= 1;
-
+    // in direction d
 
   amrex::ParallelFor(bx,
   [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k) noexcept
@@ -415,21 +531,47 @@ Castro::half_step(const Box& bx,
       ((Ed1(i+a1[0],j+a1[1],k+a1[2]) - Ed1(i,j,k)) -
        (Ed2(i+a2[0],j+a2[1],k+a2[2]) - Ed2(i,j,k)));
 
+
+    int ii = i;
+    int jj = j;
+    int kk = k;
+
+    if (d == 0) {
+      ii -= 1;
+    } else if (d == 1) {
+      jj -= 1;
+    } else {
+      kk -= 1;
+    }
+
+    Real F1l;
+    Real F1r;
+    Real F2l;
+    Real F2r;
+
     // Bd1 -- first component on face d, eq. 46 in Miniati
 
-    utmp[UMAGD1] = ul(i,j,k,UMAGD1) + sgn * 0.5_rt * hdtdx *
-      ((Ed(i+err[0],j+err[1],k+err[2]) - Ed(i+erl[0],j+erl[1],k+erl[2])) +
-       (Ed(i+elr[0],j+elr[1],k+elr[2]) - Ed(i+ell[0],j+ell[1],k+ell[2])) -
-       (Ed2(i+e2rr[0],j+e2rr[1],k+e2rr[2]) - Ed2(i+e2lr[0],j+e2lr[1],k+e2lr[2])) -
-       (Ed2(i+e2rl[0],j+e2rl[1],k+e2rl[2]) - Ed2(i+ell[0],j+ell[1],k+ell[2])));
+    get_inplane_Bs_transverse_flux(d, d1, d, ii, jj, kk,
+                                   Ex, Ey, Ez,
+                                   F1l, F1r);
+
+    get_inplane_Bs_transverse_flux(d, d1, d2, ii, jj, kk,
+                                   Ex, Ey, Ez,
+                                   F2l, F2r);
+
+    utmp[UMAGD1] = ul(i,j,k,UMAGD1) - hdtdx * ((F1r - F1l) + (F2r - F2l));
 
     // Bd2 -- second component on face d, eq. 46 in Miniati
 
-    utmp[UMAGD2] = ul(i,j,k,UMAGD2) - sgn * 0.5_rt * hdtdx *
-      ((Ed(i+err[0],j+err[1],k+err[2]) - Ed(i+elr[0],j+elr[1],k+elr[2])) +
-       (Ed(i+erl[0],j+erl[1],k+erl[2]) - Ed(i+ell[0],j+ell[1],k+ell[2])) -
-       (Ed1(i+e1rr[0],j+e1rr[1],k+e1rr[2]) - Ed1(i+e1lr[0],j+e1lr[1],k+e1lr[2])) -
-       (Ed1(i+e1rl[0],j+e1rl[1],k+e1rl[2]) - Ed1(i+ell[0],j+ell[1],k+ell[2])));
+    get_inplane_Bs_transverse_flux(d, d2, d, ii, jj, kk,
+                                   Ex, Ey, Ez,
+                                   F1l, F1r);
+
+    get_inplane_Bs_transverse_flux(d, d2, d1, ii, jj, kk,
+                                   Ex, Ey, Ez,
+                                   F2l, F2r);
+
+    utmp[UMAGD2] = ul(i,j,k,UMAGD2) - hdtdx * ((F1r - F1l) + (F2r - F2l));
 
     // convert to primitive
 
