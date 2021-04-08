@@ -54,7 +54,7 @@ class Profile:
 
 
 class Detonation:
-    def __init__(self, name):
+    def __init__(self, name, precompute=True):
         self.name = name
 
         self.cfl = None
@@ -86,6 +86,11 @@ class Detonation:
                 elif k == "quadrature":
                     self.quadrature = int(v)
 
+        if self.niters is not None:
+            self.niter_str = f"(iters = {self.niters})"
+        else:
+            self.niter_str = ""
+
         cwd = os.getcwd()
         os.chdir(name)
 
@@ -98,22 +103,24 @@ class Detonation:
         self.files.sort()
         os.chdir(cwd)
 
-        # precompute the velocity and the data profiles
-        if len(self.files) >= 3:
-            self.v, self.v_sigma = self.get_velocity()
-        else:
-            self.v, self.v_sigma = 0.0, 0.0
+        if precompute:
 
-        if len(self.files) >= 1:
-            self.data = self.get_data()
+            # precompute the velocity and the data profiles
+            if len(self.files) >= 3:
+                self.v, self.v_sigma = self.get_velocity()
+            else:
+                self.v, self.v_sigma = 0.0, 0.0
 
-            self.end_time = self.data.time
-            self.nsteps = int(self.files[-1].split("plt")[1])
-            self.has_started = True
-        else:
-            self.end_time = -1.0
-            self.nsteps = -1.0
-            self.has_started = False
+            if len(self.files) >= 1:
+                self.data = self.get_data()
+
+                self.end_time = self.data.time
+                self.nsteps = int(self.files[-1].split("plt")[1])
+                self.has_started = True
+            else:
+                self.end_time = -1.0
+                self.nsteps = -1.0
+                self.has_started = False
 
     def __repr__(self):
         return self.name
@@ -159,11 +166,13 @@ class Detonation:
             return False
 
     def get_velocity(self):
-        """look at the last 2 plotfiles and estimate the velocity by
-        finite-differencing"""
+        """look at the 3 pairings of the last 3 plotfiles and estimate the
+        velocity by finite-differencing
+
+        """
 
         vs = []
-        pairs = [(-2, -1), (-3, -1), (-3, -1)]
+        pairs = [(-2, -1), (-3, -1), (-3, -2)]
 
         for i1, i2 in pairs:
             f1 = self.files[i1]
