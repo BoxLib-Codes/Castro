@@ -1,5 +1,6 @@
 #include <Castro.H>
 #include <Castro_F.H>
+#include <Castro_sdc_util.H>
 
 using namespace amrex;
 
@@ -369,6 +370,16 @@ Castro::ca_sdc_conservative_update(const Box& bx, Real const dt_m,
     {
         U_new(i,j,k,n) = U_old(i,j,k,n) + dt_m * R_new(i,j,k,n) + dt_m * C(i,j,k,n);
     });
+
+    // enforce normalization of the species
+
+    amrex::ParallelFor(bx,
+    [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k) noexcept
+    {
+        normalize_species_sdc(i, j, k, U_new);
+    });
+
+
 } // end subroutine ca_sdc_conservative_update
 #endif
 

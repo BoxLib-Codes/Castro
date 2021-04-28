@@ -312,6 +312,7 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
     // (e.g. UEINT and UEDEN) that we demand in every zone.
 
     MultiFab& S_old = get_old_data(State_Type);
+
     clean_state(
 #ifdef MHD
                  get_old_data(Mag_Type_x),
@@ -319,7 +320,6 @@ Castro::initialize_advance(Real time, Real dt, int amr_iteration, int amr_ncycle
                  get_old_data(Mag_Type_z),
 #endif      
                   S_old, time, S_old.nGrow());
-
 
     // Initialize the previous state data container now, so that we can
     // always ask if it has valid data.

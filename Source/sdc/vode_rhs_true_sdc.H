@@ -35,9 +35,18 @@ void rhs(const Real time, burn_t& burn_state, dvode_t& vode_state, RArray1D& dUd
     // note: vode_state % y(:) is 1-based
 
     U_full[URHO] = vode_state.y(1);
+    Real sum_rhoX = 0.0;
     for (int n = 0; n < NumSpec; n++) {
         U_full[UFS+n] = vode_state.y(2+n);
+        sum_rhoX += U_full[UFS+n];
     }
+
+    // ensure that the mass fractions are normalized
+
+    for (int n = 0; n < NumSpec; n++) {
+        U_full[UFS+n] *= U_full[URHO] / sum_rhoX;
+    }
+
     U_full[UEINT] = vode_state.y(NumSpec+2);
     U_full[UEDEN] = burn_state.E_var;
 

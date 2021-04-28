@@ -172,15 +172,6 @@ Castro::do_sdc_update(int m_start, int m_end, Real dt)
 
             }
 
-            // ca_sdc_update_o2(BL_TO_FORTRAN_BOX(bx), &dt_m,
-            //                  BL_TO_FORTRAN_3D((*k_new[m_start])[mfi]),
-            //                  BL_TO_FORTRAN_3D((*k_new[m_end])[mfi]),
-            //                  BL_TO_FORTRAN_3D((*A_new[m_start])[mfi]),
-            //                  BL_TO_FORTRAN_3D((*R_old[m_start])[mfi]),
-            //                  BL_TO_FORTRAN_3D(C2),
-            //                  &sdc_iteration,
-            //                  &m_start);
-
             auto k_m = (*k_new[m_start]).array(mfi);
             auto k_n = (*k_new[m_end]).array(mfi);
             auto A_m = (*A_new[m_start]).array(mfi);
@@ -192,6 +183,8 @@ Castro::do_sdc_update(int m_start, int m_end, Real dt)
             [=] AMREX_GPU_HOST_DEVICE (int i, int j, int k) noexcept
             {
                 sdc_update_o2(i, j, k, k_m, k_n, A_m, A_n, C_arr, dt_m, sdc_iteration, m_start);
+
+                normalize_species_sdc(i, j, k, k_n);
             });
         }
         else
@@ -219,8 +212,6 @@ Castro::do_sdc_update(int m_start, int m_end, Real dt)
             {
                 normalize_species_sdc(i, j, k, U_center_arr);
             });
-            // ca_normalize_species(AMREX_INT_ANYD(bx1.loVect()), AMREX_INT_ANYD(bx1.hiVect()),
-            //                      BL_TO_FORTRAN_ANYD(U_center));
 
             // convert the C source to cell-centers
             C_center.resize(bx1, NUM_STATE);

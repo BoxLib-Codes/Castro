@@ -671,7 +671,9 @@ The overall evolution appears as:
 
 #. *Initialization* (``initialize_advance``)
 
-   Here we create the ``MultiFab`` s that store the needed information
+   We first do a ``clean_state`` on the old data (``S_old``).
+
+   Next we create the ``MultiFab`` s that store the needed information
    at the different time nodes.  Each of the quantities below is a
    vector of size ``SDC_NODES``, whose components are the ``MultiFab``
    for that time node:

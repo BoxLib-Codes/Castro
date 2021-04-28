@@ -26,19 +26,21 @@ void
 normalize_species_sdc(const int i, const int j, const int k,
                       Array4<Real> const& u) {
 
-    GpuArray<Real, NumSpec> xn;
+    Real sum_rhoX = 0.0_rt;
 
-    Real xn_sum = 0.0_rt;
+    // we are working on partial densities, so we want to first limit
+    // the species to lie between [0, rho]
+
+    sum_rhoX = 0.0_rt;
 
     for (int n = 0; n < NumSpec; ++n) {
-        xn[n] = u(i,j,k,UFS+n);
-        xn[n] = amrex::max(small_x * u(i,j,k,URHO), amrex::min(u(i,j,k,URHO), xn[n]));
-        xn_sum += xn[n];
+        u(i,j,k,UFS+n) = amrex::max(small_x * u(i,j,k,URHO),
+                                    amrex::min(u(i,j,k,URHO), u(i,j,k,UFS+n)));
+        sum_rhoX += u(i,j,k,UFS+n);
     }
 
     for (int n = 0; n < NumSpec; ++n) {
-        xn[n] *= u(i,j,k,URHO) / xn_sum;
-        u(i,j,k,UFS+n) = xn[n];
+        u(i,j,k,UFS+n) *= u(i,j,k,URHO) / sum_rhoX;
     }
 }
 
@@ -602,10 +604,20 @@ sdc_vode_solve(const Real dt_m,
     }
 
     // update the full U_new
+
     U_new[URHO] = dvode_state.y(1);
+    Real sum_rhoX = 0.0_rt;
     for (int n = 0; n < NumSpec; ++n) {
-        U_new[UFS+n] = dvode_state.y(2+n);
+        U_new[UFS+n] = amrex::max(0.0_rt, dvode_state.y(2+n));
+        sum_rhoX += U_new[UFS+n];
     }
+
+    // normalize the abundances to account for integration error
+
+    for (int n = 0; n < NumSpec; ++n) {
+        U_new[UFS+n] *= U_new[URHO] / sum_rhoX;
+    }
+
     U_new[UEINT] = dvode_state.y(NumSpec+2);
     auto v2 = 0.0_rt;
     for (int n = 0; n < 3; ++n) {
@@ -614,6 +626,7 @@ sdc_vode_solve(const Real dt_m,
     U_new[UEDEN] = U_new[UEINT] + 0.5_rt * v2 / U_new[URHO];
 
     // keep our temperature guess
+
     U_new[UTEMP] = U_old[UTEMP];
 
 #endif
