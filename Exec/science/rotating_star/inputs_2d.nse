@@ -14,7 +14,7 @@ geometry.prob_hi   =  1.73205e10 1.73205e10
 
 amr.n_cell         = 2048 2048
 
-amr.max_level      = 1      # maximum level number allowed
+amr.max_level      = 2      # maximum level number allowed
 
 castro.lo_bc       =  3 2
 castro.hi_bc       =  2 2
@@ -60,6 +60,7 @@ amr.check_int       = 100     # number of timesteps between checkpoints
 amr.plot_file       = plt     # root name of plot file
 castro.plot_per_is_exact = 0
 amr.plot_per = 0.01
+amr.plot_int = 25
 
 amr.max_grid_size   = 512       # maximum grid size allowed -- used to control parallelism
 amr.blocking_factor = 32       # block factor in grid generation

@@ -894,6 +894,128 @@ Castro::writeBuildInfo ()
   std::cout << "\n\n";
 }
 
+
+void
+Castro::writeSummaryInfo (const std::string& dir, 
+                          const Real runtime_total, 
+                          const Real runtime_timestep, 
+                          const Real fom)
+{
+
+  // summary_info file with details about the run
+  std::ofstream summaryInfoFile;
+  std::string FullPathSummaryInfoFile = dir;
+  // FullPathSummaryInfoFile += "/summary_info";
+  summaryInfoFile.open(FullPathSummaryInfoFile.c_str(), std::ios::out);
+
+  std::string PrettyLine = std::string(78, '=') + "\n";
+  std::string OtherLine = std::string(78, '-') + "\n";
+  std::string SkipSpace = std::string(8, ' ');
+
+  // job information
+  summaryInfoFile << PrettyLine;
+  summaryInfoFile << " Castro Summary Information\n";
+  summaryInfoFile << PrettyLine;
+
+  summaryInfoFile << "job name: " << castro::job_name << "\n\n";
+  summaryInfoFile << "inputs file: " << inputs_name << "\n\n";
+
+  summaryInfoFile << "number of MPI processes: " << ParallelDescriptor::NProcs() << std::endl;
+#ifdef _OPENMP
+  summaryInfoFile << "number of threads:       " << omp_get_max_threads() << std::endl;
+#endif
+  summaryInfoFile << "\n";
+  summaryInfoFile << "hydro tile size:         " << hydro_tile_size << std::endl;
+
+  summaryInfoFile << "\n";
+  summaryInfoFile << "Total CPU time (CPU-hours): " <<
+    getCPUTime()/3600.0 << std::endl;
+
+  summaryInfoFile << "\n";
+  summaryInfoFile << "Run time (hours): " << runtime_total/3600.0 << std::endl;
+  summaryInfoFile << "Run time without initialization (hours): " << runtime_timestep/3600.0 << std::endl;
+
+  summaryInfoFile << "\n";
+  summaryInfoFile << "Average number of zones advanced per microsecond: " << std::fixed << std::setprecision(3) << fom << std::endl;
+  summaryInfoFile << "Average number of zones advanced per microsecond per rank: " << std::fixed << std::setprecision(3) << fom / ParallelDescriptor::NProcs() << std::endl;
+
+  summaryInfoFile << "\n\n";
+
+#ifdef AMREX_USE_GPU
+  // This output assumes for simplicity that every rank uses the
+  // same type of GPU.
+
+  summaryInfoFile << PrettyLine;
+  summaryInfoFile << "GPU Information:       " << "\n";
+  summaryInfoFile << PrettyLine;
+
+  summaryInfoFile << "GPU model name: " << Gpu::Device::deviceName() << "\n";
+  summaryInfoFile << "Number of GPUs used: " << Gpu::Device::numDevicesUsed() << "\n";
+
+  summaryInfoFile << "\n\n";
+#endif
+
+  // build information
+  summaryInfoFile << PrettyLine;
+  summaryInfoFile << " Build Information\n";
+  summaryInfoFile << PrettyLine;
+
+  summaryInfoFile << "build date:    " << buildInfoGetBuildDate() << "\n";
+  summaryInfoFile << "build machine: " << buildInfoGetBuildMachine() << "\n";
+  summaryInfoFile << "build dir:     " << buildInfoGetBuildDir() << "\n";
+  summaryInfoFile << "AMReX dir:     " << buildInfoGetAMReXDir() << "\n";
+
+  summaryInfoFile << "\n";
+
+  summaryInfoFile << "COMP:          " << buildInfoGetComp() << "\n";
+  summaryInfoFile << "COMP version:  " << buildInfoGetCompVersion() << "\n";
+
+  summaryInfoFile << "\n";
+  
+  summaryInfoFile << "C++ compiler:  " << buildInfoGetCXXName() << "\n";
+  summaryInfoFile << "C++ flags:     " << buildInfoGetCXXFlags() << "\n";
+
+  summaryInfoFile << "\n";
+
+  summaryInfoFile << "Fortran comp:  " << buildInfoGetFName() << "\n";
+  summaryInfoFile << "Fortran flags: " << buildInfoGetFFlags() << "\n";
+
+  summaryInfoFile << "\n";
+
+  summaryInfoFile << "Link flags:    " << buildInfoGetLinkFlags() << "\n";
+  summaryInfoFile << "Libraries:     " << buildInfoGetLibraries() << "\n";
+
+  summaryInfoFile << "\n";
+
+  for (int n = 1; n <= buildInfoGetNumModules(); n++) {
+    summaryInfoFile << buildInfoGetModuleName(n) << ": " << buildInfoGetModuleVal(n) << "\n";
+  }
+
+  summaryInfoFile << "\n";
+
+  const char* githash1 = buildInfoGetGitHash(1);
+  const char* githash2 = buildInfoGetGitHash(2);
+  const char* githash3 = buildInfoGetGitHash(3);
+  if (strlen(githash1) > 0) {
+    summaryInfoFile << "Castro       git describe: " << githash1 << "\n";
+  }
+  if (strlen(githash2) > 0) {
+    summaryInfoFile << "AMReX        git describe: " << githash2 << "\n";
+  }
+  if (strlen(githash3) > 0) {
+    summaryInfoFile << "Microphysics git describe: " << githash3 << "\n";
+  }
+
+  const char* buildgithash = buildInfoGetBuildGitHash();
+  const char* buildgitname = buildInfoGetBuildGitName();
+  if (strlen(buildgithash) > 0){
+    summaryInfoFile << buildgitname << " git describe: " << buildgithash << "\n";
+  }
+
+  summaryInfoFile.close();
+}
+
+
 void
 Castro::writePlotFile(const std::string& dir,
                       ostream& os,

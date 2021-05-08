@@ -1,19 +1,12 @@
 &fortin
 
-  rho_fuel = 2.e7
+  rho_fuel = 2.d6
   T_fuel = 5.e7
 
-  T_ash = 3.6e9
-
-  ash1_name = "nickel-56"
-  X_ash1 = 1.0
-
-  smallx_init = 1.d-8
-
-  pert_frac = 0.4d0
-  pert_delta = 0.06d0
-
-  v_inflow = 0.0d0
+  T_ash = 2.e9
+  
+  pert_frac = 0.2d0
+  pert_delta = 0.05d0
 
 /
 

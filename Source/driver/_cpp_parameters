@@ -571,7 +571,11 @@ reset_checkpoint_time        Real          -1.e200
 # and you set it to value greater than this default value.
 reset_checkpoint_step        int           -1
 
+# Do we want to output a summary file at the end of the simulation?
+output_summary_file          bool          true 
 
+# name of the summary file 
+summary_name                 string        "summary_info"
 
 
 

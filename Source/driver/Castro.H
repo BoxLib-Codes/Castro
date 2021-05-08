@@ -282,6 +282,18 @@ public:
 
 
 ///
+/// Write simulation summary info
+///
+/// @param dir       directory to write to
+/// @param runtime_total   total runtime
+/// @param runtime_timestep runtime minus initialization
+/// @param fom       figure of merit, the average number of zones advanced per microsecond
+///
+    static void writeSummaryInfo (const std::string& dir, const amrex::Real runtime_total, 
+                                  const amrex::Real runtime_timestep, const amrex::Real fom);
+
+
+///
 /// Define data descriptors.
 ///
 /// ::variableSetUp is called in the constructor of Amr.cpp, so

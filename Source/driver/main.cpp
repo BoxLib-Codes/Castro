@@ -212,6 +212,10 @@ main (int   argc,
         std::cout << "  Average number of zones advanced per microsecond: " << std::fixed << std::setprecision(3) << fom << "\n";
         std::cout << "  Average number of zones advanced per microsecond per rank: " << std::fixed << std::setprecision(3) << fom / nprocs << "\n";
         std::cout << "\n";
+
+        if (castro::output_summary_file) {
+            Castro::writeSummaryInfo(summary_name, runtime_total, runtime_timestep, fom);
+        }
     }
 
     if (CArena* arena = dynamic_cast<CArena*>(amrex::The_Arena()))
