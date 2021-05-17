@@ -4,7 +4,6 @@
 #include <AMReX_ParmParse.H>
 #include <Castro.H>
 #include <Castro_F.H>
-#include <Castro_bc_fill_nd_F.H>
 #include <Castro_bc_fill_nd.H>
 #include <Castro_generic_fill.H>
 #include <Derive.H>
@@ -600,9 +599,9 @@ Castro::variableSetUp ()
 
 #ifdef MHD
   set_mag_field_bc(bc, phys_bc);
-  desc_lst.setComponent(Mag_Type_x, 0, "b_x", bc, BndryFunc(ca_face_fillx));
-  desc_lst.setComponent(Mag_Type_y, 0, "b_y", bc, BndryFunc(ca_face_filly));
-  desc_lst.setComponent(Mag_Type_z, 0, "b_z", bc, BndryFunc(ca_face_fillz));
+  desc_lst.setComponent(Mag_Type_x, 0, "b_x", bc, genericBndryFunc);
+  desc_lst.setComponent(Mag_Type_y, 0, "b_y", bc, genericBndryFunc);
+  desc_lst.setComponent(Mag_Type_z, 0, "b_z", bc, genericBndryFunc);
 #endif
 
 

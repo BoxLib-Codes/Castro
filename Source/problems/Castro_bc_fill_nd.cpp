@@ -2,7 +2,6 @@
 #include <AMReX_BLFort.H>
 #include <Castro.H>
 #include <Castro_bc_fill_nd.H>
-#include <Castro_bc_fill_nd_F.H>
 #include <Castro_generic_fill.H>
 #include <problem_bc_fill.H>
 
@@ -122,75 +121,5 @@ void ca_statefill(Box const& bx, FArrayBox& data,
     {
         problem_bc_fill(i, j, k, state, time, bcs, geomdata);
     });
-  }
-
-
-
-#ifdef MHD
-  void ca_face_fillx(Real* var, const int* var_lo, const int* var_hi,
-                     const int* domlo, const int* domhi, const Real* dx, const Real* xlo,
-                     const Real* time, const int* bc)
-  {
-    int lo[3] = {0};
-    int hi[3] = {0};
-
-    for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-      lo[i] = var_lo[i];
-      hi[i] = var_hi[i];
-    }
-
-    const int* bc_f = bc;
-
-
-    face_fillx(AMREX_ARLIM_ANYD(lo), AMREX_ARLIM_ANYD(hi),
-               var, AMREX_ARLIM_ANYD(var_lo), AMREX_ARLIM_ANYD(var_hi),
-               AMREX_ARLIM_ANYD(domlo), AMREX_ARLIM_ANYD(domhi),
-               AMREX_ZFILL(dx), AMREX_ZFILL(xlo), *time, bc_f);
-
-  }
-
-  void ca_face_filly(Real* var, const int* var_lo, const int* var_hi,
-                     const int* domlo, const int* domhi, const Real* dx, const Real* xlo,
-                     const Real* time, const int* bc)
-  {
-    int lo[3] = {0};
-    int hi[3] = {0};
-
-    for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-      lo[i] = var_lo[i];
-      hi[i] = var_hi[i];
-    }
-
-    const int* bc_f = bc;
-
-
-    face_filly(AMREX_ARLIM_ANYD(lo), AMREX_ARLIM_ANYD(hi),
-               var, AMREX_ARLIM_ANYD(var_lo), AMREX_ARLIM_ANYD(var_hi),
-               AMREX_ARLIM_ANYD(domlo), AMREX_ARLIM_ANYD(domhi),
-               AMREX_ZFILL(dx), AMREX_ZFILL(xlo), *time, bc_f);
-
-  }
-
-  void ca_face_fillz(Real* var, const int* var_lo, const int* var_hi,
-                     const int* domlo, const int* domhi, const Real* dx, const Real* xlo,
-                     const Real* time, const int* bc)
-  {
-    int lo[3] = {0};
-    int hi[3] = {0};
-
-    for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-      lo[i] = var_lo[i];
-      hi[i] = var_hi[i];
-    }
-
-    const int* bc_f = bc;
-
-
-    face_fillz(AMREX_ARLIM_ANYD(lo), AMREX_ARLIM_ANYD(hi),
-               var, AMREX_ARLIM_ANYD(var_lo), AMREX_ARLIM_ANYD(var_hi),
-               AMREX_ARLIM_ANYD(domlo), AMREX_ARLIM_ANYD(domhi),
-               AMREX_ZFILL(dx), AMREX_ZFILL(xlo), *time, bc_f);
-
-  }
-#endif  
+}
 

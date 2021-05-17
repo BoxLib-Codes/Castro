@@ -56,5 +56,4 @@ endif
 
 ca_F90EXE_sources += prob_params_nd.F90
 ca_F90EXE_sources += Tagging_nd.F90
-ca_f90EXE_sources += filfc.f90
 CEXE_sources += timestep.cpp
