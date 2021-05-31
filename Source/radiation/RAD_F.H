@@ -131,21 +131,6 @@ extern "C"
 #endif
 // </ MGFLD>
 
-BL_FORT_PROC_DECL(CA_COMPUTE_FCC, ca_compute_fcc)
-    (const int lo[], const int hi[], 
-     D_DECL(const BL_FORT_FAB_ARG(lamx),
-            const BL_FORT_FAB_ARG(lamy),
-            const BL_FORT_FAB_ARG(lamz)), int& nlam,
-     BL_FORT_FAB_ARG(fcc));
-
-BL_FORT_PROC_DECL(CA_TRANSFORM_FLUX, ca_transform_flux)
-    (const int lo[], const int hi[], const amrex::Real& flag,
-     const BL_FORT_FAB_ARG(Snew),
-     const BL_FORT_FAB_ARG(f),
-     const BL_FORT_FAB_ARG(Er), 
-     const BL_FORT_FAB_ARG(Fi), int& ifi, int& nfi, 
-     BL_FORT_FAB_ARG(Fo), int& ifo, int& nfo);
-
 #ifdef __cplusplus
 extern "C" {
 #endif

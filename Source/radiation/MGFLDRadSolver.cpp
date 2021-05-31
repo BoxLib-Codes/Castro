@@ -570,7 +570,7 @@ void Radiation::MGFLD_implicit_update(int level, int iteration, int ncycle)
   // }
 
   if (plot_lab_flux) {
-      save_lab_flux_in_plotvar(level, S_new, lambda, Er_new, *flxcc, icomp_flux);
+      save_flux_in_plotvar(level, S_new, lambda, Er_new, *flxcc, icomp_flux);
   }
 
   if (verbose) {

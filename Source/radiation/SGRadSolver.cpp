@@ -395,7 +395,7 @@ void Radiation::single_group_update(int level, int iteration, int ncycle)
 
       if (plot_lab_flux) {
           if (comoving) {
-              save_lab_flux_in_plotvar(level, S_new, lambda, Er_new, flx, 0);
+              save_flux_in_plotvar(level, S_new, lambda, Er_new, flx, 0);
           } else {
               MultiFab::Copy(*plotvar[level], flx, 0, icomp_lab_Fr, AMREX_SPACEDIM, 0);
           }
@@ -405,7 +405,7 @@ void Radiation::single_group_update(int level, int iteration, int ncycle)
           if (comoving) {
               MultiFab::Copy(*plotvar[level], flx, 0, icomp_com_Fr, AMREX_SPACEDIM, 0);
           } else {
-              save_com_flux_in_plotvar(level, S_new, lambda, Er_new, flx, 0);
+              save_flux_in_plotvar(level, S_new, lambda, Er_new, flx, 0, -1.0);
           }
       }
   }

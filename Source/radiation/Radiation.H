@@ -883,10 +883,12 @@ public:
 /// @param Er
 /// @param F
 /// @param iflx
+/// @param lab_factor
 ///
-  void save_lab_flux_in_plotvar(int level, const amrex::MultiFab& Snew,
-                                const amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>& lambda,
-                                const amrex::MultiFab& Er, const amrex::MultiFab& F, int iflx);
+  void save_flux_in_plotvar(int level, const amrex::MultiFab& Snew,
+                            const amrex::Array<amrex::MultiFab,AMREX_SPACEDIM>& lambda,
+                            const amrex::MultiFab& Er, const amrex::MultiFab& F,
+                            int iflx, const amrex::Real lab_factor = 1.0);
 
 ///
 /// @param level

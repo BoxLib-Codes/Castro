@@ -36,7 +36,6 @@ ca_F90EXE_sources += HABEC_$(DIM)D.F90
 
 CEXE_sources += trace_ppm_rad.cpp
 ca_f90EXE_sources += CastroRad_$(DIM)d.f90
-ca_f90EXE_sources += RadPlotvar_$(DIM)d.f90
 
 ca_F90EXE_sources += rad_params.F90
 ca_F90EXE_sources += Rad_nd.F90
