@@ -30,6 +30,21 @@ std::string inputs_name = "";
 
 amrex::LevelBld* getLevelBld ();
 
+// Any parameters we want to override the defaults for in AMReX
+
+void override_parameters ()
+{
+    ParmParse pp("amrex");
+    if (!pp.contains("the_arena_is_managed")) {
+        // Use device memory allocations, not managed memory.
+        pp.add("the_arena_is_managed", false);
+    }
+    if (!pp.contains("abort_on_out_of_gpu_memory")) {
+        // Abort if we run out of GPU memory.
+        pp.add("abort_on_out_of_gpu_memory", true);
+    }
+}
+
 int
 main (int   argc,
       char* argv[])
@@ -48,7 +63,7 @@ main (int   argc,
     //
     // Make sure to catch new failures.
     //
-    amrex::Initialize(argc,argv);
+    amrex::Initialize(argc, argv, true, MPI_COMM_WORLD, override_parameters);
     {
 
     // Refuse to continue if we did not provide an inputs file.
