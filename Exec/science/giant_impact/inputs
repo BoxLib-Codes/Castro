@@ -1,0 +1,243 @@
+
+############################## CASTRO INPUTS ###############################################
+
+############################################################################################
+# Geometry
+############################################################################################
+
+# Non-periodic boundary conditions
+geometry.is_periodic = 0 0 0
+
+# Cartesian coordinate system
+geometry.coord_sys = 0
+
+# Lower boundary limits in physical space
+geometry.prob_lo = -5.12e9 -5.12e9 -5.12e9
+
+# Upper boundary limits in physical space
+geometry.prob_hi =  5.12e9  5.12e9  5.12e9
+
+############################################################################################
+# Boundary conditions
+# 0 = Interior           3 = Symmetry
+# 1 = Inflow             4 = SlipWall
+# 2 = Outflow            5 = NoSlipWall
+############################################################################################
+
+# Boundary conditions on lo x, y, and z edges
+castro.lo_bc = 2 2 2
+
+# Boundary conditions on hi x, y, and z edges
+castro.hi_bc = 2 2 2
+
+############################################################################################ 
+# Timestepping
+############################################################################################
+
+# Maximum coarse timestep
+max_step = 10000000
+
+# Simulation time to stop at
+stop_time = 1000.0
+
+# CFL number for hyperbolic system
+castro.cfl = 0.8
+
+# Scale back initial timestep by a large factor; there is a steep density
+# gradient at the edge of the objects and the hydro needs to be able to adjust
+castro.init_shrink = 0.01
+
+# Factor by which dt is allowed to change each timestep
+castro.change_max = 1.1
+
+# If we regrid on Level 0, compute a new timestep afterward
+amr.compute_new_dt_on_regrid = 1
+
+# Skip retries for small density if the starting density was less than this threshold
+castro.retry_small_density_cutoff = 1.0e-2
+
+############################################################################################ 
+# Resolution, gridding and AMR
+############################################################################################
+
+# Number of cells on the coarse grid
+amr.n_cell = 128 128 128
+
+# Maximum level number allowed
+amr.max_level = 0
+
+# Refinement ratio
+amr.ref_ratio = 4 4 4 4 4 4 4 4 4
+
+# How many coarse timesteps between regridding
+amr.regrid_int = 2
+
+# Number of buffer cells in error estimation
+amr.n_error_buf = 2 2 2 2 2 2 2 2 2 2
+
+# Maximum grid size at each level
+amr.max_grid_size = 64
+
+# Grid sizes must be a multiple of blocking factor
+amr.blocking_factor = 32
+
+# Refinement indicators
+amr.refinement_indicators = denerr
+
+# Indicate we are tagging on density
+amr.refine.denerr.field_name = density
+
+# Density threshold for tagging
+amr.refine.denerr.value_greater = 1.0e0
+
+# Order of reconstruction for interpolation
+castro.state_interp_order = 0
+
+# Limiting on state data interpolation (preserve linear combinations)
+castro.lin_limit_state_interp = 1
+
+############################################################################################
+# Physics to include
+############################################################################################
+
+# Whether or not to do hydrodynamics
+castro.do_hydro = 1
+
+# Whether or not to do gravity
+castro.do_grav = 1
+
+# Whether or not to apply the sponge
+castro.do_sponge = 1
+
+############################################################################################
+# Hydrodynamics
+############################################################################################
+
+# Reset (rho*e) if it goes negative in the transverse terms
+castro.transverse_reset_rhoe = 1
+
+# Reset rho if it goes negative in the transverse terms
+castro.transverse_reset_density = 1
+
+# Explicitly limit fluxes to avoid hitting a negative density
+castro.limit_fluxes_on_small_dens = 1
+
+############################################################################################
+# Thermodynamics
+############################################################################################
+
+# Minimum allowable temperature (K)
+castro.small_temp = 1.e-5
+
+# Minimum allowable density (g / cm**3)
+castro.small_dens = 1.e-8
+
+# Ambient temperature (K)
+castro.ambient_temp = 1.0e3
+
+# Ambient density (g / cm**3)
+castro.ambient_density = 1.0e-7
+
+# Clamp temperature of ambient material
+castro.clamp_ambient_temp = 1
+
+# We want to clamp the temperature of everything below 0.01 g / cm**3
+# Otherwise, ram pressure from the planet spuriously heats the material
+castro.ambient_safety_factor = 1.0e5
+
+############################################################################################
+# Gravity
+############################################################################################
+
+# Full self-gravity with the Poisson equation
+gravity.gravity_type = PoissonGrav
+
+# Multipole expansion includes terms up to r**(-max_multipole_order)
+gravity.max_multipole_order = 6
+
+# Tolerance for multigrid solver for phi solves
+gravity.abs_tol = 1.e-10
+
+# Use sync solve for gravity after refluxing
+gravity.no_sync = 0
+
+# Disable the use of the lagged composite correction for the potential
+gravity.do_composite_phi_correction = 0
+
+############################################################################################
+# Sponge
+############################################################################################
+
+# Minimum density to start applying the sponge
+castro.sponge_lower_density = 1.0e-2
+
+# Density by which the sponge is fully applied
+castro.sponge_upper_density = 1.0e-2
+
+# Sponge damping timescale (in seconds)
+castro.sponge_timescale     = 1.0e-8
+
+############################################################################################
+# Load balancing
+############################################################################################
+
+# Choice of load balancing strategy to use
+DistributionMapping.strategy = KNAPSACK
+
+# Efficiency demanded from the knapsack algorithm
+DistributionMapping.efficiency = 0.9
+
+############################################################################################
+# Diagnostics and I/O
+############################################################################################
+
+# Timesteps between computing and printing volume averaged diagnostic quantities
+castro.sum_interval = 1
+
+# Name the job
+castro.job_name = giant_impact
+
+# Whether or not to output plotfiles
+amr.plot_files_output = 1
+
+# Whether or not to output checkpoints
+amr.checkpoint_files_output = 1
+
+# Root name of checkpoint files
+amr.check_file = chk
+
+# We want to store the 'old' state data in checkpoints
+castro.dump_old = 1
+
+# Simulation time between checkpoints
+amr.check_per = 100.0
+
+# Number of timesteps between checkpoints
+amr.check_int = -1
+
+# Root name of plot files
+amr.plot_file = plt
+
+# Simulation time between plotfiles
+amr.plot_per = 100.0
+
+# Number of timesteps between plotfiles
+amr.plot_int = -1
+
+# How often to check whether the run script asked for a checkpoint dump
+amr.message_int = 1
+
+# Control verbosity in Amr.cpp
+amr.v = 1
+
+# Control verbosity in Castro.cpp
+castro.v = 1
+
+# Control verbosity in Gravity.cpp
+gravity.v = 1
+
+# State variables to add to plot files
+amr.plot_vars = ALL
+
+# Derived variables to add to plot files
+amr.derive_plot_vars = NONE

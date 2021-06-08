@@ -1,0 +1,33 @@
+# name                          data type             default                  in namelist?           size
+  
+# Initial properties of target and impactor
+
+target_mass                     real                  0.525e0_rt               y
+impactor_mass                   real                  0.525e0_rt               y
+target_temperature              real                  1.000e3_rt               y
+impactor_temperature            real                  1.000e3_rt               y
+target_radius                   real                  0.000e0_rt               n
+impactor_radius                 real                  0.000e0_rt               n
+
+# 1D initial model parameters
+
+initial_model_dx                real                  1.00e4_rt                y
+
+# Initial distance (in units of the target radius)
+
+initial_distance                real                  4.000e0_rt               y
+
+# Impact parameter (in units of the target radius)
+
+impact_parameter                real                  0.950e0_rt               y
+
+# Relative velocity at infinity (in units of the system escape velocity)
+
+initial_velocity                real                  0.000e0_rt               y
+
+# Storage for initial locations and velocities
+
+target_initial_center           real                  0.00e0_rt                n                      3
+target_initial_velocity         real                  0.00e0_rt                n                      3
+impactor_initial_center         real                  0.00e0_rt                n                      3
+impactor_initial_velocity       real                  0.00e0_rt                n                      3
