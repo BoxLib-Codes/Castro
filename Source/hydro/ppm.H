@@ -81,11 +81,6 @@ ppm_reconstruct(const Real* s,
 
   sm = 0.5_rt * (s[i0] + s[im1]) - (1.0_rt/6.0_rt) * (dsvl_r - dsvl_l);
 
-  // Make sure sedge lies in between adjacent cell-centered values
-
-  sm = amrex::max(sm, amrex::min(s[i0], s[im1]));
-  sm = amrex::min(sm, amrex::max(s[i0], s[im1]));
-
 
   // Compute van Leer slopes
 
@@ -111,11 +106,6 @@ ppm_reconstruct(const Real* s,
 
   sp = 0.5_rt * (s[ip1] + s[i0]) - (1.0_rt/6.0_rt) * (dsvl_r - dsvl_l);
 
-  // Make sure sedge lies in between adjacent cell-centered values
-
-  sp = amrex::max(sp, amrex::min(s[ip1], s[i0]));
-  sp = amrex::min(sp, amrex::max(s[ip1], s[i0]));
-
 
   // Flatten the parabola
 
@@ -135,6 +125,52 @@ ppm_reconstruct(const Real* s,
   } else if (std::abs(sm - s[i0]) >= 2.0_rt * std::abs(sp - s[i0])) {
     sm = 3.0_rt * s[i0] - 2.0_rt * sp;
   }
+
+  // Optionally use one sided stencil on steep gradients.
+  //
+  // For example, if we have
+  // |  i-2  |  i-1  |   i   |  i+1  |  i+2  |
+  //   1.0e0   1.0e0   1.0e0   1.0e8   1.0e8
+  //
+  // and we want the edge value at i+1/2 to be 1.0e8 and not (say)
+  // 5.0e7, we can use this to have the edge value only use information
+  // from i+1 and i+2 for constructing both the left and right values
+  // at i+1/2. We use the larger value here because the assumption for
+  // when you would use this is that you want to represent sharp transitions
+  // between stellar and ambient material and it matters a lot more to
+  // get the stellar material correct than to get the ambient correct.
+  //
+  // When using this we construct a simple second order stencil; in the
+  // case above, it would be s_{i+1/2} = s_{i+1} - (dx / 2) * (df / dx)
+  // and using (df / dx) = (s_{i+2} - s_{i+1}) / dx we will get
+  // s_{i+1/2} = (3/2) s_{i+1} - (1/2) s_{i+2}
+  //
+  // The threshold should be a number larger than 1 and measures the
+  // relative ratio between the larger quantity and the smaller quantity.
+
+  if (castro::ppm_one_sided_threshold * std::abs(s[ip1]) < std::abs(s[i0])) {
+      sp = 1.5_rt * s[i0] - 0.5_rt * s[im1];
+  }
+
+  if (std::abs(s[im1]) > castro::ppm_one_sided_threshold * std::abs(s[i0])) {
+      sm = 1.5_rt * s[im1] - 0.5_rt * s[im2];
+  }
+
+  if (castro::ppm_one_sided_threshold * std::abs(s[im1]) < std::abs(s[i0])) {
+      sm = 1.5_rt * s[i0] - 0.5_rt * s[ip1];
+  }
+
+  if (std::abs(s[ip1]) > castro::ppm_one_sided_threshold * std::abs(s[i0])) {
+      sp = 1.5_rt * s[ip1] - 0.5_rt * s[ip2];
+  }
+
+  // Make sure sedge lies in between adjacent cell-centered values
+
+  sp = amrex::max(sp, amrex::min(s[ip1], s[i0]));
+  sp = amrex::min(sp, amrex::max(s[ip1], s[i0]));
+
+  sm = amrex::max(sm, amrex::min(s[i0], s[im1]));
+  sm = amrex::min(sm, amrex::max(s[i0], s[im1]));
 
 }
 

@@ -102,6 +102,11 @@ plm_iorder                   int           2
 # 1 = 2nd order MC, 2 = 4th order MC
 plm_limiter                  int           2
 
+# on gradients at least this large, use a one-sided
+# stencil estimate in the PPM that favors the larger
+# quantity (useful for dealing with sharp density gradients)
+ppm_one_sided_threshold      Real          1.e20
+
 # do we drop from our regular Riemann solver to HLL when we
 # are in shocks to avoid the odd-even decoupling instability?
 hybrid_riemann               int           0
