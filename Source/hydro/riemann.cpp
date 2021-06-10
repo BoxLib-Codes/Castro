@@ -117,11 +117,28 @@ Castro::cmpflx_plus_godunov(const Box& bx,
             Real fp = 0.5_rt*(1.0_rt + sgnm);
             Real fm = 0.5_rt*(1.0_rt - sgnm);
 
+            // we don't want to store all the values of X, so we are going
+            // to reconstruct in 2 steps to implement the CMA method
+
+            Real sum_X = 0.0_rt;
+
+            for (int n = 0; n < NumSpec; n++) {
+                sum_X += amrex::max(0.0_rt,
+                                    amrex::min(1.0_rt,
+                                               fp * qm(i,j,k,QFS+n) + fm * qp(i,j,k,QFS+n)));
+            }
+
             for (int ipassive = 0; ipassive < npassive; ipassive++) {
                 int nqp = qpassmap(ipassive);
                 int n  = upassmap(ipassive);
 
                 Real X_int = fp * qm(i,j,k,nqp) + fm * qp(i,j,k,nqp);
+
+                if (nqp >= QFS && nqp < QFS+NumSpec) {
+                    // normalize
+                    X_int = amrex::max(0.0_rt, amrex::min(1.0_rt, X_int));
+                    X_int = X_int / sum_X;
+                }
 
                 flx(i,j,k,n) = flx(i,j,k,URHO) * X_int;
 
