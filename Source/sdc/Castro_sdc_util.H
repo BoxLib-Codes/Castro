@@ -583,12 +583,12 @@ sdc_vode_solve(const Real dt_m,
     rtol[NumSpec+1] = tol_ener;
 
     // absolute tolerances
-    atol[0] = sdc_solver_atol * U_old[URHO];
+    atol[0] = sdc_solver_atol;
     for (int n = 0; n < NumSpec; ++n) {
         atol[1+n] = sdc_solver_atol * U_old[URHO]; // this way, atol is the minimum x
     }
 
-    atol[NumSpec+1] = sdc_solver_atol * U_old[UEINT];
+    atol[NumSpec+1] = sdc_solver_atol;
 
     for (int n = 1; n <= NumSpec+2; ++n) {
         dvode_state.atol(n) = atol[n-1];

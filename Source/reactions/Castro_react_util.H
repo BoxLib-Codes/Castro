@@ -113,7 +113,7 @@ single_zone_react_source(const int i, const int j, const int k,
                          Array4<Real> const& R,
                          burn_t& burn_state) {
     GpuArray<Real, NUM_STATE> state_arr;
-    GpuArray<Real, NUM_STATE> R_arr; 
+    GpuArray<Real, NUM_STATE> R_arr;
 
     for (int n = 0; n < NUM_STATE; ++n) {
         state_arr[n] = state(i,j,k,n);
@@ -133,6 +133,22 @@ single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
                 burn_t burn_state,
                 Array2D<Real, 0, NumSpec+1, 0, NumSpec+1>& dRdw) {
 
+    // we enter this routine if we are doing the Newton solver or VODE
+    // with an analytic Jacobian.
+    //
+    // For Newton, we select the analytic or numerical Jacobian
+    // evalution via sdc_newton_use_analytic_jac.
+    //
+    // For VODE, we enter this for integrator.jacobian = 1 or 3.  In
+    // both cases, the Jacobian is expressed as dR/dU = dR/dw dw/dU,
+    // and we always compute dw/dU analytically.  For
+    // integrator.jacobian = 1, we will compute dR/dw analytically,
+    // using the network.  Otherwise, we will compute it numerically,
+    // via differencing.
+
+    // Regardless of the above, the derivatives wrt density are always
+    // computed numerically.
+
 #ifdef SIMPLIFIED_SDC
 #ifndef AMREX_USE_GPU
     amrex::Error("we shouldn't be here with the simplified SDC method (USE_SIMPLIFIED_SDC=TRUE)");
@@ -148,10 +164,10 @@ single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
     actual_rhs(burn_state, ydot);
 
     // Jac has the derivatives with respect to the native
-    // network variables, X, T. e.  It does not have derivatives with
+    // network variables, X, e.  It does not have derivatives with
     // respect to density, so we'll have to compute those ourselves.
 
-    if (sdc_newton_use_analytic_jac == 0) {
+    if (sdc_newton_use_analytic_jac == 0 || jacobian == 3) {
         // note the numerical Jacobian will be returned in terms of X
         numerical_jac(burn_state, Jac);
     } else {
@@ -210,7 +226,7 @@ single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
     for (int n = 0; n < NumAux; ++n) {
         burn_state_pert.aux[n] = burn_state.aux[n];
     }
-#endif 
+#endif
 
     actual_rhs(burn_state_pert, ydot_pert);
 
@@ -223,12 +239,12 @@ single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
     // with respect to rho
     for (int m = 1; m <= NumSpec; ++m) {
        // d( d(rho X_m)/dt)/drho
-       dRdw(m, iwrho) = ydot(m) + 
+       dRdw(m, iwrho) = ydot(m) +
             state[URHO] * (ydot_pert(m) - ydot(m))/(eps * burn_state.rho);
     }
 
     // d( d(rho E)/dt)/drho
-    dRdw(NumSpec+1, iwrho) = ydot(net_ienuc) + 
+    dRdw(NumSpec+1, iwrho) = ydot(net_ienuc) +
          state[URHO] * (ydot_pert(net_ienuc) - ydot(net_ienuc))/(eps * burn_state.rho);
 
     // fill the columns of dRdw corresponding to each derivative

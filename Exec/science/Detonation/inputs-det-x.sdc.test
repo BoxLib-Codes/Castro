@@ -31,7 +31,7 @@ castro.sdc_solver = 2
 castro.sdc_solver_tol_dens = 1.e-5
 castro.sdc_solver_tol_spec = 1.e-5
 castro.sdc_solver_tol_ener = 1.e-5
-castro.sdc_solver_atol = 1.e-10
+castro.sdc_solver_atol = 1.e-6
 castro.sdc_newton_use_analytic_jac = 1
 
 castro.ppm_type = 0
@@ -101,4 +101,7 @@ amr.refine.tempgrad.field_name = Temp
 
 # Microphysics
 
-integrator.call_eos_in_rhs = 1
+integrator.jacobian = 3
+
+integrator.ode_max_steps = 1500000
+
