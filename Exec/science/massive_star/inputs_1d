@@ -10,9 +10,9 @@ geometry.is_periodic = 0 0
 geometry.coord_sys = 2         # spherical
 
 geometry.prob_lo   =  0.    0.
-geometry.prob_hi   =  17498633068.48000
+geometry.prob_hi   =  1.75e10
 
-amr.n_cell         = 6400
+amr.n_cell         = 8192
 
 amr.max_level      = 0       # maximum level number allowed
 
@@ -78,7 +78,7 @@ castro.time_integration_method=3
 
 # problem initialization
 
-problem.model_name =  "15m_500_sec.aprox19.hse.6400"
+problem.model_name =  "15m_500_sec.aprox19.hse.8192"
 
 # refinement
 
