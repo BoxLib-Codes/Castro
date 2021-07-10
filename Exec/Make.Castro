@@ -355,7 +355,6 @@ clean::
 	$(SILENT) $(RM) extern.F90 prob_params_auto.F90 extern_parameters.H extern_parameters_F.H extern_parameters.cpp
 	$(SILENT) $(RM) AMReX_buildInfo.cpp
 	$(SILENT) $(RM) $(CASTRO_AUTO_SOURCE_DIR)/*.H $(CASTRO_AUTO_SOURCE_DIR)/*.[fF]90
-	@if [ -L helm_table.dat ]; then rm -f helm_table.dat; fi
 
 # these files are now created directly in the CASTRO_AUTO_SOURCE_DIR so eventually we
 # can get rid of explicitly removing them (this is for backwards compatability)
