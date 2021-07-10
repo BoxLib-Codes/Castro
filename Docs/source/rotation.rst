@@ -71,9 +71,6 @@ The main parameters that affect rotation are:
 -  ``castro.state_in_rotating_frame`` : whether state
    variables are measured in the rotating frame (default: 1)
 
--  ``castro.rot_source_type`` : method of updating the
-   energy during a rotation update (default: 4)
-
 -  ``castro.implicit_rotation_update`` : for the Coriolis
    term, which mixes momenta in the source term, whether we should
    solve for the update implicitly (default: 1)
@@ -285,59 +282,15 @@ reference:
 Adding the forcing to the hydrodynamics
 =======================================
 
-There are several ways to incorporate the effect of the rotation
-forcing on the hydrodynamical evolution. We control this through the
-use of the runtime parameter castro.rot_source_type. This
-is an integer with values currently ranging from 1 through 4, and
-these values are all analogous to the way that gravity is used to
-update the momentum and energy. For the most part, the differences are
-in how the energy update is done:
+The momentum update is done using a standard cell-centered formulation.
+The energy update is done in a “conservative” fashion. We evaluate
+the change in energy at cell edges, using the hydrodynamical mass
+fluxes, permitting total energy to be conserved (excluding possible
+losses at open domain boundaries). Additionally, for the corrector step
+in the velocity update, we note that there is an implicit coupling between
+the velocity components, and we can directly solve this coupled equation,
+which results in a slightly better coupling and a more accurate evolution.
+This is controlled using ``castro.implicit_rotation_update``.
 
-* ``castro.rot_source_type = 1`` : we use a standard
-  predictor-corrector formalism for updating the momentum and
-  energy. Specifically, our first update is equal to :math:`\Delta t \times \mathbf{S}^n` ,
-  where :math:`\mathbf{S}^n` is the value of
-  the source terms at the old-time (which is usually called time-level
-  :math:`n`). At the end of the timestep, we do a corrector step where
-  we subtract off :math:`\Delta t / 2 \times \mathbf{S}^n` and add on
-  :math:`\Delta t / 2 \times \mathbf{S}^{n+1}`, so that at the end of
-  the timestep the source term is properly time centered.
-
-* ``castro.rot_source_type = 2`` : we do something very similar
-  to 1. The major difference is that when evaluating the energy source
-  term at the new time (which is equal to
-  :math:`\mathbf{u} \cdot \mathbf{S}^{n+1}_{\rho \mathbf{u}}`, where the latter is the
-  momentum source term evaluated at the new time), we first update the
-  momentum, rather than using the value of :math:`\mathbf{u}` before
-  entering the rotation source terms. This permits a tighter coupling
-  between the momentum and energy update and we have seen that it
-  usually results in a more accurate evolution.
-
-* ``castro.rot_source_type = 3`` : we do the same momentum update as
-  the previous two, but for the energy update, we put all of the work
-  into updating the kinetic energy alone. In particular, we explicitly
-  ensure that :math:`(rho e)` maintains the same, and update
-  :math:`(rho K)` with the work due to rotation, adding the new
-  kinetic energy to the old internal energy to determine the final
-  total gas energy. The physical motivation is that work should be
-  done on the velocity, and should not directly update the temperature
-  – only indirectly through things like shocks.
-
-* ``castro.rot_source_type = 4`` : the energy update is done in a
-   “conservative” fashion. The previous methods all evaluate the value
-   of the source term at the cell center, but this method evaluates
-   the change in energy at cell edges, using the hydrodynamical mass
-   fluxes, permitting total energy to be conserved (excluding possible
-   losses at open domain boundaries). Additionally, the velocity
-   update is slightly different—for the corrector step, we note that
-   there is an implicit coupling between the velocity components, and
-   we directly solve this coupled equation, which results in a
-   slightly better coupling and a more accurate evolution.
-
-The other major option is ``castro.implicit_rotation_update``.
-This does the update of the Coriolis term in the momentum equation
-implicitly (e.g., the velocity in the Coriolis force for the zone
-depends on the updated momentum). The energy update is unchanged.
-
-A detailed discussion of these options and some verification
+A detailed discussion of the rotational forcing and some verification
 tests is presented in :cite:`katz:2016`.

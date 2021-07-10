@@ -248,8 +248,6 @@ void Castro::construct_old_gravity_source(MultiFab& source, MultiFab& state_in, 
     GeometryData geomdata = geom.data();
 #endif
 
-    AMREX_ALWAYS_ASSERT(castro::grav_source_type >= 1 && castro::grav_source_type <= 4);
-
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -277,13 +275,6 @@ void Castro::construct_old_gravity_source(MultiFab& source, MultiFab& state_in, 
             for (int n = 0; n < NSRC; ++n) {
                 src[n] = 0.0_rt;
             }
-
-            // Gravitational source options for how to add the work to (rho E):
-            // grav_source_type =
-            // 1: Original version ("does work")
-            // 2: Modification of type 1 that updates the momentum before constructing the energy corrector
-            // 3: Puts all gravitational work into KE, not (rho e)
-            // 4: Conservative energy formulation
 
             Real rho    = uold(i,j,k,URHO);
             Real rhoInv = 1.0_rt / rho;
@@ -320,33 +311,15 @@ void Castro::construct_old_gravity_source(MultiFab& source, MultiFab& state_in, 
             }
 #endif
 
-            Real SrE;
+            // Our conservative energy formulation does not strictly require
+            // any energy source-term here, because it depends only on the
+            // fluid motions from the hydrodynamical fluxes which we will only
+            // have when we get to the 'corrector' step. Nevertheless we add a
+            // predictor energy source term in the way that the other methods
+            // do, for consistency. We will fully subtract this predictor value
+            // during the corrector step, so that the final result is correct.
 
-            if (castro::grav_source_type == 1 || castro::grav_source_type == 2) {
-
-                // Src = rho u dot g, evaluated with all quantities at t^n
-
-                SrE = (uold(i,j,k,UMX) * Sr[0] + uold(i,j,k,UMY) * Sr[1] + uold(i,j,k,UMZ) * Sr[2]) * rhoInv;
-
-            } else if (castro::grav_source_type == 3) {
-
-                Real new_ke = 0.5_rt * (snew[UMX] * snew[UMX] + snew[UMY] * snew[UMY] + snew[UMZ] * snew[UMZ]) * rhoInv;
-                SrE = new_ke - old_ke;
-
-            } else if (castro::grav_source_type == 4) {
-
-                // The conservative energy formulation does not strictly require
-                // any energy source-term here, because it depends only on the
-                // fluid motions from the hydrodynamical fluxes which we will only
-                // have when we get to the 'corrector' step. Nevertheless we add a
-                // predictor energy source term in the way that the other methods
-                // do, for consistency. We will fully subtract this predictor value
-                // during the corrector step, so that the final result is correct.
-                // Here we use the same approach as grav_source_type == 2.
-
-                SrE = (uold(i,j,k,UMX) * Sr[0] + uold(i,j,k,UMY) * Sr[1] + uold(i,j,k,UMZ) * Sr[2]) * rhoInv;
-
-            }
+            Real SrE = (uold(i,j,k,UMX) * Sr[0] + uold(i,j,k,UMY) * Sr[1] + uold(i,j,k,UMZ) * Sr[2]) * rhoInv;
 
             src[UEDEN] = SrE;
 
@@ -404,8 +377,6 @@ void Castro::construct_new_gravity_source(MultiFab& source, MultiFab& state_old,
     GeometryData geomdata = geom.data();
 #endif
 
-    AMREX_ALWAYS_ASSERT(castro::grav_source_type >= 1 && castro::grav_source_type <= 4);
-
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -430,13 +401,6 @@ void Castro::construct_new_gravity_source(MultiFab& source, MultiFab& state_old,
                 GpuArray<Real, NSRC> src{};
 
                 Real hdtInv = 0.5_rt / dt;
-
-                // Gravitational source options for how to add the work to (rho E):
-                // grav_source_type =
-                // 1: Original version ("does work")
-                // 2: Modification of type 1 that updates the U before constructing SrEcorr
-                // 3: Puts all gravitational work into KE, not (rho e)
-                // 4: Conservative gravity approach (discussed in first white dwarf merger paper).
 
                 Real rhoo    = uold(i,j,k,URHO);
                 Real rhooinv = 1.0_rt / uold(i,j,k,URHO);
@@ -514,73 +478,41 @@ void Castro::construct_new_gravity_source(MultiFab& source, MultiFab& state_old,
 
                 // Correct energy
 
-                Real SrEcorr;
+                // First, subtract the predictor step we applied earlier.
 
-                if (castro::grav_source_type == 1) {
+                Real SrEcorr = - SrE_old;
 
-                    // If grav_source_type == 1, then we calculated SrEcorr before updating the velocities.
+                // For an explanation of this approach, see wdmerger paper I.
+                // The main idea is that we are evaluating the change of the
+                // potential energy at zone edges and applying that in an equal
+                // and opposite sense to the gas energy. The physics is described
+                // in Section 2.4; we are using a version of the formula similar to
+                // Equation 94 in Springel (2010) based on the gradient rather than
+                // the potential because the gradient-version works for all forms
+                // of gravity we use, some of which do not explicitly calculate phi.
 
-                    SrEcorr = 0.5_rt * (SrE_new - SrE_old);
+                // Construct the time-averaged edge-centered gravity.
 
-                } else if (castro::grav_source_type == 2) {
-
-                    // For this source type, we first update the momenta
-                    // before we calculate the energy source term.
-
-                    for (int n = 0; n < 3; ++n) {
-                        vnew[n] = snew[UMX+n] * rhoninv;
-                    }
-                    SrE_new = vnew[0] * Sr_new[0] + vnew[1] * Sr_new[1] + vnew[2] * Sr_new[2];
-
-                    SrEcorr = 0.5_rt * (SrE_new - SrE_old);
-
-                } else if (castro::grav_source_type == 3) {
-
-                    // Instead of calculating the energy source term explicitly,
-                    // we simply update the kinetic energy.
-
-                    Real new_ke = 0.5_rt * (snew[UMX] * snew[UMX] + snew[UMY] * snew[UMY] + snew[UMZ] * snew[UMZ]) * rhoninv;
-                    SrEcorr = new_ke - old_ke;
-
-                } else if (castro::grav_source_type == 4) {
-
-                    // First, subtract the predictor step we applied earlier.
-
-                    SrEcorr = - SrE_old;
-
-                    // For an explanation of this approach, see wdmerger paper I.
-                    // The main idea is that we are evaluating the change of the
-                    // potential energy at zone edges and applying that in an equal
-                    // and opposite sense to the gas energy. The physics is described
-                    // in Section 2.4; we are using a version of the formula similar to
-                    // Equation 94 in Springel (2010) based on the gradient rather than
-                    // the potential because the gradient-version works for all forms
-                    // of gravity we use, some of which do not explicitly calculate phi.
-
-                    // Construct the time-averaged edge-centered gravity.
-
-                    GpuArray<Real, 3> g;
-                    for (int n = 0; n < 3; ++n) {
-                        g[n] = 0.5_rt * (gnew(i,j,k,n) + gold(i,j,k,n));
-                    }
-
-                    Real gxl = 0.5_rt * (g[0] + 0.5_rt * (gnew(i-1*dg0,j,k,0) + gold(i-1*dg0,j,k,0)));
-                    Real gxr = 0.5_rt * (g[0] + 0.5_rt * (gnew(i+1*dg0,j,k,0) + gold(i+1*dg0,j,k,0)));
-
-                    Real gyl = 0.5_rt * (g[1] + 0.5_rt * (gnew(i,j-1*dg1,k,1) + gold(i,j-1*dg1,k,1)));
-                    Real gyr = 0.5_rt * (g[1] + 0.5_rt * (gnew(i,j+1*dg1,k,1) + gold(i,j+1*dg1,k,1)));
-
-                    Real gzl = 0.5_rt * (g[2] + 0.5_rt * (gnew(i,j,k-1*dg2,2) + gold(i,j,k-1*dg2,2)));
-                    Real gzr = 0.5_rt * (g[2] + 0.5_rt * (gnew(i,j,k+1*dg2,2) + gold(i,j,k+1*dg2,2)));
-
-                    SrEcorr += hdtInv * (flux0(i      ,j,k) * gxl * dx[0] +
-                                         flux0(i+1*dg0,j,k) * gxr * dx[0] +
-                                         flux1(i,j      ,k) * gyl * dx[1] +
-                                         flux1(i,j+1*dg1,k) * gyr * dx[1] +
-                                         flux2(i,j,k      ) * gzl * dx[2] +
-                                         flux2(i,j,k+1*dg2) * gzr * dx[2]) / vol(i,j,k);
-
+                GpuArray<Real, 3> g;
+                for (int n = 0; n < 3; ++n) {
+                    g[n] = 0.5_rt * (gnew(i,j,k,n) + gold(i,j,k,n));
                 }
+
+                Real gxl = 0.5_rt * (g[0] + 0.5_rt * (gnew(i-1*dg0,j,k,0) + gold(i-1*dg0,j,k,0)));
+                Real gxr = 0.5_rt * (g[0] + 0.5_rt * (gnew(i+1*dg0,j,k,0) + gold(i+1*dg0,j,k,0)));
+
+                Real gyl = 0.5_rt * (g[1] + 0.5_rt * (gnew(i,j-1*dg1,k,1) + gold(i,j-1*dg1,k,1)));
+                Real gyr = 0.5_rt * (g[1] + 0.5_rt * (gnew(i,j+1*dg1,k,1) + gold(i,j+1*dg1,k,1)));
+
+                Real gzl = 0.5_rt * (g[2] + 0.5_rt * (gnew(i,j,k-1*dg2,2) + gold(i,j,k-1*dg2,2)));
+                Real gzr = 0.5_rt * (g[2] + 0.5_rt * (gnew(i,j,k+1*dg2,2) + gold(i,j,k+1*dg2,2)));
+
+                SrEcorr += hdtInv * (flux0(i      ,j,k) * gxl * dx[0] +
+                                     flux0(i+1*dg0,j,k) * gxr * dx[0] +
+                                     flux1(i,j      ,k) * gyl * dx[1] +
+                                     flux1(i,j+1*dg1,k) * gyr * dx[1] +
+                                     flux2(i,j,k      ) * gzl * dx[2] +
+                                     flux2(i,j,k+1*dg2) * gzr * dx[2]) / vol(i,j,k);
 
                 src[UEDEN] = SrEcorr;
 

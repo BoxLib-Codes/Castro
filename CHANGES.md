@@ -81,6 +81,8 @@
 
 # 21.01
 
+   * grav_source_type and rot_source_type have been removed. (#580)
+
    * The minimum C++ standard supported by Castro is now C++17. Most modern compilers
      support C++17; the notable exception is RHEL 7 and its derivatives like CentOS 7,
      where the default compiler is gcc 4.8. In that case a newer compiler must be loaded,

@@ -426,10 +426,6 @@ do_grav                      int          -1
 # to we recompute the center used for the multipole gravity solve each step?
 moving_center                int           0
 
-# determines how the gravitational source term is added to the momentum and
-# energy state variables.
-grav_source_type             int           4
-
 # permits rotation calculation to be turned on and off
 do_rotation                  int          -1
 
@@ -449,10 +445,6 @@ rotation_include_coriolis    int           1                  n        ROTATION
 # the state variables will be measured with respect to an observer fixed
 # in the inertial frame (but the frame will still rotate).
 state_in_rotating_frame     int           1                  n        ROTATION
-
-# determines how the rotation source terms are added to the momentum and
-# energy equations
-rot_source_type              int           4                  n        ROTATION
 
 # we can do a implicit solution of the rotation update to allow
 # for better coupling of the Coriolis terms

@@ -568,47 +568,18 @@ where :math:`M_{enclosed}` has the same meaning as with the
 Hydrodynamics Source Terms
 ==========================
 
-There are several options to incorporate the effects of gravity into
-the hydrodynamics system. The main parameter here is
-``castro.grav_source_type``.
+We use a standard predictor-corrector formalism for updating the momentum.
+Our first update is equal to :math:`\Delta t \times \mathbf{S}^n`, where
+:math:`\mathbf{S}^n` is the value of the source terms at the old-time
+(which is usually called time-level :math:`n`). At the end of the timestep,
+we do a corrector step where we subtract off :math:`\Delta t / 2 \times \mathbf{S}^n`
+and add on :math:`\Delta t / 2 \times \mathbf{S}^{n+1}`, so that at the end of
+the timestep the source term is properly time centered.
 
-- ``castro.grav_source_type`` = 1 : we use a standard
-  predictor-corrector formalism for updating the momentum and
-  energy. Specifically, our first update is equal to :math:`\Delta t
-  \times \mathbf{S}^n` , where :math:`\mathbf{S}^n` is the value of
-  the source terms at the old-time (which is usually called time-level
-  :math:`n`). At the end of the timestep, we do a corrector step where
-  we subtract off :math:`\Delta t / 2 \times \mathbf{S}^n` and add on
-  :math:`\Delta t / 2 \times \mathbf{S}^{n+1}`, so that at the end of
-  the timestep the source term is properly time centered.
-
-- ``castro.grav_source_type`` = 2 : we do something very similar
-  to 1. The major difference is that when evaluating the energy source
-  term at the new time (which is equal to :math:`\mathbf{u} \cdot
-  \mathbf{S}^{n+1}_{\rho \mathbf{u}}`, where the latter is the
-  momentum source term evaluated at the new time), we first update the
-  momentum, rather than using the value of :math:`\mathbf{u}` before
-  entering the gravity source terms. This permits a tighter coupling
-  between the momentum and energy update and we have seen that it
-  usually results in a more accurate evolution.
-
-- ``castro.grav_source_type`` = 3 : we do the same momentum update as
-  the previous two, but for the energy update, we put all of the work
-  into updating the kinetic energy alone. In particular, we explicitly
-  ensure that :math:`(\rho e)` remains the same, and update
-  :math:`(\rho K)` with the work due to gravity, adding the new kinetic
-  energy to the old internal energy to determine the final total gas
-  energy. The physical motivation is that work should be done on the
-  velocity, and should not directly update the temperature—only
-  indirectly through things like shocks.
-
-- ``castro.grav_source_type`` = 4 : the energy update is done in a
-  “conservative” fashion. The previous methods all evaluate the value
-  of the source term at the cell center, but this method evaluates the
-  change in energy at cell edges, using the hydrodynamical mass
-  fluxes, permitting total energy to be conserved (excluding possible
-  losses at open domain boundaries). See
-  :cite:`katzthesis` for some more details.
+The energy update is done in an explicitly “conservative” fashion.
+We evaluate the change in energy at cell edges, using the hydrodynamical mass
+fluxes, permitting total energy to be conserved (excluding possible losses at
+open domain boundaries). See :cite:`katzthesis` for some more details.
 
 .. [2]
    Note: The GR

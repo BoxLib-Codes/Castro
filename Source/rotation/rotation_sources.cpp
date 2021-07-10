@@ -84,43 +84,17 @@ Castro::rsrc(const Box& bx,
     }
 #endif
 
-    // Kinetic energy source: this is v . the momentum source.
-    // We don't apply in the case of the conservative energy
-    // formulation.
+    // Our conservative energy formulation does not strictly require
+    // any energy source-term here, because it depends only on the
+    // fluid motions from the hydrodynamical fluxes which we will only
+    // have when we get to the 'corrector' step. Nevertheless we add a
+    // predictor energy source term in the way that the other methods
+    // do, for consistency. We will fully subtract this predictor value
+    // during the corrector step, so that the final result is correct.
 
-    Real SrE;
-
-    if (rot_source_type == 1 || rot_source_type == 2) {
-
-      SrE = uold(i,j,k,UMX) * rhoInv * Sr[0] +
-            uold(i,j,k,UMY) * rhoInv * Sr[1] +
-            uold(i,j,k,UMZ) * rhoInv * Sr[2];
-
-    } else if (rot_source_type == 3) {
-
-      Real new_ke = 0.5_rt * (snew[UMX] * snew[UMX] + snew[UMY] * snew[UMY] + snew[UMZ] * snew[UMZ]) * rhoInv;
-      SrE = new_ke - old_ke;
-
-    } else if (rot_source_type == 4) {
-
-      // The conservative energy formulation does not strictly require
-      // any energy source-term here, because it depends only on the
-      // fluid motions from the hydrodynamical fluxes which we will only
-      // have when we get to the 'corrector' step. Nevertheless we add a
-      // predictor energy source term in the way that the other methods
-      // do, for consistency. We will fully subtract this predictor value
-      // during the corrector step, so that the final result is correct.
-      // Here we use the same approach as rot_source_type == 2.
-
-      SrE = uold(i,j,k,UMX) * rhoInv * Sr[0] +
-            uold(i,j,k,UMY) * rhoInv * Sr[1] +
-            uold(i,j,k,UMZ) * rhoInv * Sr[2];
-
-    } else {
-#ifndef AMREX_USE_GPU
-      amrex::Error("Error:: rotation_sources_nd.F90 :: invalid rot_source_type");
-#endif
-    }
+    Real SrE = uold(i,j,k,UMX) * rhoInv * Sr[0] +
+               uold(i,j,k,UMY) * rhoInv * Sr[1] +
+               uold(i,j,k,UMZ) * rhoInv * Sr[2];
 
     src[UEDEN] += SrE;
 
@@ -164,13 +138,6 @@ Castro::corrrsrc(const Box& bx,
 
   // flux0, flux1, and flux2 are the hydrodynamical mass fluxes
 
-
-  // Rotation source options for how to add the work to (rho E):
-  // rot_source_type =
-  // 1: Standard version ("does work")
-  // 2: Modification of type 1 that updates the momentum before constructing the energy corrector
-  // 3: Puts all rotational work into KE, not (rho e)
-  // 4: Conservative energy formulation
 
   // Note that the time passed to this function
   // is the new time at time-level n+1.
@@ -400,94 +367,44 @@ Castro::corrrsrc(const Box& bx,
 
     // Correct energy
 
-    Real SrEcorr;
+    // First, subtract the predictor step we applied earlier.
 
-    if (rot_source_type == 1) {
+    Real SrEcorr = - SrE_old;
 
-      // If rot_source_type == 1, then we calculated SrEcorr before updating the velocities.
+    // The change in the gas energy is equal in magnitude to, and opposite in sign to,
+    // the change in the rotational potential energy, rho * phi.
+    // This must be true for the total energy, rho * E_gas + rho * phi, to be conserved.
+    // Consider as an example the zone interface i+1/2 in between zones i and i + 1.
+    // There is an amount of mass drho_{i+1/2} leaving the zone. From this zone's perspective
+    // it starts with a potential phi_i and leaves the zone with potential phi_{i+1/2} =
+    // (1/2) * (phi_{i-1}+phi_{i}). Therefore the new rotational energy is equal to the mass
+    // change multiplied by the difference between these two potentials.
+    // This is a generalization of the cell-centered approach implemented in
+    // the other source options, which effectively are equal to
+    // SrEcorr = - drho(i,j,k) * phi(i,j,k),
+    // where drho(i,j,k) = HALF * (unew(i,j,k,URHO) - uold(i,j,k,URHO)).
 
-      SrEcorr = 0.5_rt * (SrE_new - SrE_old);
+    // Note that in the hydrodynamics step, the fluxes used here were already
+    // multiplied by dA and dt, so dividing by the cell volume is enough to
+    // get the density change (flux * dt * dA / dV). We then divide by dt
+    // so that we get the source term and not the actual update, which will
+    // be applied later by multiplying by dt.
 
-    } else if (rot_source_type == 2) {
+    Real phi = 0.5_rt * (phi_new(i,j,k) + phi_old(i,j,k));
 
-      // For this source type, we first update the momenta
-      // before we calculate the energy source term.
+    Real phixl = 0.5_rt * (phi_new(i-1,j,k) + phi_old(i-1,j,k));
+    Real phixr = 0.5_rt * (phi_new(i+1,j,k) + phi_old(i+1,j,k));
+    Real phiyl = 0.5_rt * (phi_new(i,j-dg1,k) + phi_old(i,j-dg1,k));
+    Real phiyr = 0.5_rt * (phi_new(i,j+dg1,k) + phi_old(i,j+dg1,k));
+    Real phizl = 0.5_rt * (phi_new(i,j,k-dg2) + phi_old(i,j,k-dg2));
+    Real phizr = 0.5_rt * (phi_new(i,j,k+dg2) + phi_old(i,j,k+dg2));
 
-      GpuArray<Real, 3> vnew;
-
-      vnew[0] = snew[UMX] * rhoninv;
-      vnew[1] = snew[UMY] * rhoninv;
-      vnew[2] = snew[UMZ] * rhoninv;
-
-      Real acc[3];
-      coriolis = true;
-      rotational_acceleration(loc, vnew, coriolis, acc);
-
-      Sr_new[0] = rhon * acc[0];
-      Sr_new[1] = rhon * acc[1];
-      Sr_new[2] = rhon * acc[2];
-
-      Real SrE_new = vnew[0] * Sr_new[0] + vnew[1] * Sr_new[1] + vnew[2] * Sr_new[2];
-
-      SrEcorr = 0.5_rt * (SrE_new - SrE_old);
-
-    } else if (rot_source_type == 3) {
-
-      // Instead of calculating the energy source term explicitly,
-      // we simply update the kinetic energy.
-
-      Real new_ke = 0.5_rt * (snew[UMX] * snew[UMX] + snew[UMY] * snew[UMY] + snew[UMZ] * snew[UMZ]) * rhoninv;
-      SrEcorr = new_ke - old_ke;
-
-    } else if (rot_source_type == 4) {
-
-      // Conservative energy update
-
-      // First, subtract the predictor step we applied earlier.
-
-      SrEcorr = - SrE_old;
-
-      // The change in the gas energy is equal in magnitude to, and opposite in sign to,
-      // the change in the rotational potential energy, rho * phi.
-      // This must be true for the total energy, rho * E_gas + rho * phi, to be conserved.
-      // Consider as an example the zone interface i+1/2 in between zones i and i + 1.
-      // There is an amount of mass drho_{i+1/2} leaving the zone. From this zone's perspective
-      // it starts with a potential phi_i and leaves the zone with potential phi_{i+1/2} =
-      // (1/2) * (phi_{i-1}+phi_{i}). Therefore the new rotational energy is equal to the mass
-      // change multiplied by the difference between these two potentials.
-      // This is a generalization of the cell-centered approach implemented in
-      // the other source options, which effectively are equal to
-      // SrEcorr = - drho(i,j,k) * phi(i,j,k),
-      // where drho(i,j,k) = HALF * (unew(i,j,k,URHO) - uold(i,j,k,URHO)).
-
-      // Note that in the hydrodynamics step, the fluxes used here were already
-      // multiplied by dA and dt, so dividing by the cell volume is enough to
-      // get the density change (flux * dt * dA / dV). We then divide by dt
-      // so that we get the source term and not the actual update, which will
-      // be applied later by multiplying by dt.
-
-      Real phi = 0.5_rt * (phi_new(i,j,k) + phi_old(i,j,k));
-
-      Real phixl = 0.5_rt * (phi_new(i-1,j,k) + phi_old(i-1,j,k));
-      Real phixr = 0.5_rt * (phi_new(i+1,j,k) + phi_old(i+1,j,k));
-      Real phiyl = 0.5_rt * (phi_new(i,j-dg1,k) + phi_old(i,j-dg1,k));
-      Real phiyr = 0.5_rt * (phi_new(i,j+dg1,k) + phi_old(i,j+dg1,k));
-      Real phizl = 0.5_rt * (phi_new(i,j,k-dg2) + phi_old(i,j,k-dg2));
-      Real phizr = 0.5_rt * (phi_new(i,j,k+dg2) + phi_old(i,j,k+dg2));
-
-      SrEcorr = SrEcorr - (0.5_rt / dt) * ( flux0(i    ,j,k) * (phi - phixl) -
-                                            flux0(i+1  ,j,k) * (phi - phixr) +
-                                            flux1(i,    j,k) * (phi - phiyl) -
-                                            flux1(i,j+dg1,k) * (phi - phiyr) +
-                                            flux2(i,j,k    ) * (phi - phizl) -
-                                            flux2(i,j,k+dg2) * (phi - phizr) ) / vol(i,j,k);
-
-
-    } else {
-#ifndef AMREX_USE_GPU
-      amrex::Error("Error:: rotation_sources_nd.F90 :: invalid rot_source_type");
-#endif
-    }
+    SrEcorr = SrEcorr - (0.5_rt / dt) * ( flux0(i    ,j,k) * (phi - phixl) -
+                                          flux0(i+1  ,j,k) * (phi - phixr) +
+                                          flux1(i,    j,k) * (phi - phiyl) -
+                                          flux1(i,j+dg1,k) * (phi - phiyr) +
+                                          flux2(i,j,k    ) * (phi - phizl) -
+                                          flux2(i,j,k+dg2) * (phi - phizr) ) / vol(i,j,k);
 
     src[UEDEN] = SrEcorr;
 
