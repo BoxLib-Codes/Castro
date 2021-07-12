@@ -130,7 +130,7 @@ single_zone_react_source(const int i, const int j, const int k,
 AMREX_GPU_HOST_DEVICE AMREX_INLINE
 void
 single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
-                burn_t burn_state,
+                burn_t& burn_state, const Real dt,
                 Array2D<Real, 0, NumSpec+1, 0, NumSpec+1>& dRdw) {
 
 #ifdef SIMPLIFIED_SDC
@@ -153,7 +153,9 @@ single_zone_jac(GpuArray<Real, NUM_STATE> const& state,
 
     if (sdc_newton_use_analytic_jac == 0) {
         // note the numerical Jacobian will be returned in terms of X
-        numerical_jac(burn_state, Jac);
+        jac_info_t jac_info;
+        jac_info.h = dt;
+        numerical_jac(burn_state, jac_info, Jac);
     } else {
         actual_jac(burn_state, Jac);
 

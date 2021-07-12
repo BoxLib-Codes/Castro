@@ -133,7 +133,7 @@ void jac (burn_t& burn_state, dvode_t& vode_state, MatrixType& pd)
     burn_t burn_state_pass;
     single_zone_react_source(U_full, R_full, burn_state_pass);
 
-    single_zone_jac(U_full, burn_state_pass, dRdw);
+    single_zone_jac(U_full, burn_state_pass, vode_state.H, dRdw);
 
     // construct dwdU
 

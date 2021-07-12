@@ -142,7 +142,7 @@ f_sdc_jac(const Real dt_m,
 
     // get dRdw -- this may do a numerical approxiation or use the
     // network's analytic Jac
-    single_zone_jac(U_full, burn_state, dRdw);
+    single_zone_jac(U_full, burn_state, dt_m, dRdw);
 
     // the density row
     dwdU(iwrho, 0) = 1.0_rt;
