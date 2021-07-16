@@ -3,7 +3,7 @@ max_step = 100000
 stop_time =  5e-5
 
 # PROBLEM SIZE & GEOMETRY
-geometry.is_periodic = 0 0 0
+geometry.is_periodic = 0 1 0
 geometry.coord_sys   = 0  # 0 => cart, 1 => RZ  2=>spherical
 geometry.prob_lo     = 0     0     0
 geometry.prob_hi     = 256 32   
@@ -15,8 +15,8 @@ amr.n_cell           = 256 32
 # 1 = Inflow             4 = SlipWall
 # 2 = Outflow            5 = NoSlipWall
 # >>>>>>>>>>>>>  BC FLAGS <<<<<<<<<<<<<<<<
-castro.lo_bc       =  2   2   4
-castro.hi_bc       =  2   2   4
+castro.lo_bc       =  3   0   4
+castro.hi_bc       =  2   0   4
 
 # WHICH PHYSICS
 castro.do_hydro = 1
@@ -71,12 +71,11 @@ amr.derive_plot_vars = ALL
 
 #PROBIN FILENAME
 
-problem.T_l = 4.423e9
-problem.T_r = 2.e8
+problem.T_ash = 4.423e9
+problem.T_fuel = 2.e8
 
-problem.dens_l = 4.236e7
-problem.dens_r = 4.236e7
-problem.cfrac = 1.e0
+problem.dens_ash = 4.236e7
+problem.dens_fuel = 1.e7
 
 problem.smallx = 1.e-10
 

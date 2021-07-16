@@ -1,12 +1,10 @@
-T_l                  real          1.e9_rt        y
+T_ash                real          1.e9_rt        y
 
-T_r                  real          5.e7_rt        y
+T_fuel               real          5.e7_rt        y
 
-dens_l               real          1.e8_rt        y
+dens_ash             real          1.e8_rt        y
 
-dens_r               real          1.e8_rt        y
-
-cfrac                real          0.5_rt         y
+dens_fuel            real          1.e8_rt        y
 
 ofrac                real          0.0_rt         y
 
@@ -28,18 +26,68 @@ ic12                 integer       -1
 
 io16                 integer       -1
 
-xn                   real          0.0_rt         n     nspec
+xn_ash               real          0.0_rt         n     nspec
 
-ambient_dens         real         0.0_rt
+xn_fuel              real          0.0_rt         n     nspec
 
-ambient_temp         real         0.0_rt
+fuel1_name           character     "carbon-12"    y
 
-ambient_comp         real         0.0_rt          n     nspec
+fuel2_name           character     ""             y
 
-ambient_e_l          real         0.0_rt
+fuel3_name           character     ""             y
 
-ambient_e_r          real         0.0_rt
+fuel4_name           character     ""             y
 
-B_0            real      0.0_rt        y 
+fuel5_name           character     ""             y
+
+fuel6_name           character     ""             y
+
+X_fuel1              real          1.0_rt         y
+
+X_fuel2              real          0.0_rt         y
+
+X_fuel3              real          0.0_rt         y
+
+X_fuel4              real          0.0_rt         y
+
+X_fuel5              real          0.0_rt         y
+
+X_fuel6              real          0.0_rt         y
+ 
+ash1_name            character     "oxygen-16"    y
+
+ash2_name            character     "silicon-28"   y
+
+ash3_name            character     "sulfur-32"    y
+
+ash4_name            character     "helium-4"     y
+
+ash5_name            character     "magnesium-24" y
+
+ash6_name            character     "argon-36"     y
+
+X_ash1               real           0.3_rt        y
+
+X_ash2               real           0.45_rt       y
+
+X_ash3               real           0.12_rt       y
+
+X_ash4               real           0.075_rt      y
+
+X_ash5               real           0.02_rt       y
+
+X_ash6               real           0.02_rt       y
+
+ambient_dens         real           0.0_rt
+
+ambient_temp         real           0.0_rt
+
+ambient_comp         real           0.0_rt         n     nspec
+
+ambient_e_ash        real           0.0_rt
+
+ambient_e_fuel       real           0.0_rt
+
+B_0                  real           0.0_rt         y 
 
 pert_amplitude       real         0.005_rt         y  
