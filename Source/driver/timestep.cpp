@@ -362,6 +362,8 @@ Castro::estdt_burning()
 
     MultiFab& S_new = get_new_data(State_Type);
 
+    const MultiFab& R_new = get_new_data(Reactions_Type);
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -370,6 +372,7 @@ Castro::estdt_burning()
         const Box& box = mfi.validbox();
 
         const auto S = S_new[mfi].array();
+        const auto R = R_new[mfi].array();
 
         const auto dx = geom.CellSizeArray();
 
@@ -452,7 +455,8 @@ Castro::estdt_burning()
             // that the implied timestep will be very large, and thus
             // ignored compared to other limiters.
 
-            dedt = amrex::max(std::abs(dedt), derivative_floor);
+            //dedt = amrex::max(std::abs(dedt), derivative_floor);
+            dedt = amrex::max(std::abs(R(i,j,k,0) / S(i,j,k,URHO)), derivative_floor);
 
             for (int n = 0; n < NumSpec; ++n) {
                 if (X[n] >= castro::dtnuc_X_threshold) {
