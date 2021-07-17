@@ -26,74 +26,111 @@ class ScalingRun(object):
         self.diffusion = diffusion
         self.ctu_hydro = ctu_hydro
 
+def filter_fastest_runs(data):
+
+    truns = []
+
+    for row in data:
+        truns.append(ScalingRun(nodes=row[0], max_grid=row[1],
+                                time=row[2], std=row[3], coarse_timestep=row[4],
+                                react=row[5], parallelcopy=row[6], diffusion=row[7], ctu_hydro=row[8]))
+
+    # for each node count, find the fastest case
+    runs = []
+
+    nodes = (q.nodes for q in truns)
+
+    for n in nodes:
+        current_runs = [q for q in truns if q.nodes == n]
+        fastest = None
+        for run in current_runs:
+            if fastest is None:
+                fastest = run
+            else:
+                if run.time < fastest.time:
+                    fastest = run
+        runs.append(fastest)
+
+    return runs
+
 def trend_line(c, t):
     cnew = np.array(sorted(list(set(c))))
     trend = t[0]*c[0]/cnew[:]
     return cnew, trend
 
-truns = []
+files = [("scaling_20200613.txt", "2020"),
+         ("scaling_20210606.txt", "2021")]
 
-data = np.loadtxt("scaling_20200613.txt")
+for f, year in files:
 
-for row in data:
-    truns.append(ScalingRun(nodes=row[0], max_grid=row[1],
-                           time=row[2], std=row[3], coarse_timestep=row[4],
-                           react=row[5], parallelcopy=row[6], diffusion=row[7], ctu_hydro=row[8]))
+    data = np.loadtxt(f)
+
+    runs = filter_fastest_runs(data)
+
+    nodes = [q.nodes for q in runs]
+    times = [q.time  for q in runs]
+    std = [q.std for q in runs]
+
+    react = [q.react/nsteps for q in runs]
+    hydro = [q.ctu_hydro/nsteps for q in runs]
+    diffuse = [q.diffusion/nsteps for q in runs]
+    copy = [q.parallelcopy/nsteps for q in runs]
+
+    fig, ax = plt.subplots(1)
+
+    ax.scatter(nodes, times, label = "timestep", marker="s")
+
+    c, t = trend_line(nodes, times)
+    ax.plot(c, t)
+
+    ax.scatter(nodes, hydro, label = "hydro")
+    ax.scatter(nodes, react, label = "reactions")
+    ax.scatter(nodes, diffuse, label = "diffusion")
+    ax.scatter(nodes, copy, label = "MPI")
+
+    ax.set_xscale("log")
+
+    ax.xaxis.set_minor_formatter(mticker.ScalarFormatter())
+    ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax.yaxis.set_minor_formatter(mticker.FormatStrFormatter("%4.1f"))
+    ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
+
+    ax.set_xlim(200, 2500)
+    #ax.set_ylim(5, 50)
+
+    ax.set_ylabel("wallclock time / step")
+    ax.set_xlabel("number of nodes")
+
+    leg = ax.legend(facecolor="#555555", framealpha=0.1)
+
+    fig.savefig(f"flame_wave_scaling_{year}.png")
 
 
-# for each node count, find the fastest case
-runs = []
+# now show the change through years
 
-nodes = (q.nodes for q in truns)
+fig, ax = plt.subplots(1)
 
-for n in nodes:
-    current_runs = [q for q in truns if q.nodes == n]
-    fastest = None
-    for run in current_runs:
-        if fastest is None:
-            fastest = run
-        else:
-            if run.time < fastest.time:
-                fastest = run
-    runs.append(fastest)
+markers = {"2020": "s", "2021": "x"}
 
-nodes = [q.nodes for q in runs]
-times = [q.time  for q in runs]
-std = [q.std for q in runs]
+for f, year in files:
 
-react = [q.react/nsteps for q in runs]
-hydro = [q.ctu_hydro/nsteps for q in runs]
-diffuse = [q.diffusion/nsteps for q in runs]
-copy = [q.parallelcopy/nsteps for q in runs]
+    data = np.loadtxt(f)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
+    runs = filter_fastest_runs(data)
 
-ax.scatter(nodes, times, label = "timestep", marker="s")
+    nodes = [q.nodes for q in runs]
+    times = [q.time  for q in runs]
+    std = [q.std for q in runs]
 
-c, t = trend_line(nodes, times)
-ax.plot(c, t)
+    ax.scatter(nodes, times, label = year, marker=markers[year])
 
-ax.scatter(nodes, hydro, label = "hydro")
-ax.scatter(nodes, react, label = "reactions")
-ax.scatter(nodes, diffuse, label = "diffusion")
-ax.scatter(nodes, copy, label = "MPI")
-
-#ax.set_yscale("log")
-ax.set_xscale("log")
-
-ax.xaxis.set_minor_formatter(mticker.ScalarFormatter())
-ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
-ax.yaxis.set_minor_formatter(mticker.FormatStrFormatter("%4.1f"))
-ax.yaxis.set_major_formatter(mticker.ScalarFormatter())
-
-ax.set_xlim(200, 2500)
-#ax.set_ylim(5, 50)
+    if year == "2020":
+        c, t = trend_line(nodes, times)
+        ax.plot(c, t)
 
 ax.set_ylabel("wallclock time / step")
 ax.set_xlabel("number of nodes")
 
 leg = ax.legend(facecolor="#555555", framealpha=0.1)
 
-fig.savefig("flame_wave_scaling.png")
-
+fig.savefig("flame_wave_scaling_history.png")
